@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="zh">
+  <head>
+    <meta charset="UTF-8" />
+    <title>跳转中…</title>
+    <script>
+      // GitHub Pages 单页应用 fallback：
+      // 访问 /portfolio/<任意子路由> 刷新时，GitHub Pages 找不到对应文件返回本页，
+      // 这里把真实路径作为 ?p= 参数重定向回 /portfolio/，由 index.html 还原路径。
+      var repo = "portfolio";
+      var pathname = window.location.pathname;
+      var idx = pathname.indexOf("/" + repo);
+      var rest = idx >= 0 ? pathname.slice(idx + repo.length + 1) : "";
+      var base = pathname.slice(0, idx + repo.length + 1);
+      window.location.replace(
+        window.location.origin + base + "?p=" + encodeURIComponent(rest) + window.location.hash,
+      );
+    </script>
+  </head>
+  <body></body>
+</html>
