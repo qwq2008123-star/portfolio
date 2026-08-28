@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Michael Smith — Creative developer portfolio. Selected work, journal and visual explorations."
+    />
+    <title>Michael Smith — Portfolio</title>
+    <script>
+      // SPA fallback for GitHub Pages: /portfolio/<path> 刷新时 404.html 会把路径
+      // 作为 ?p= 参数重定向回首页，这里把它还原成真实路径再交给 React Router。
+      (function () {
+        var m = window.location.search.match(/[?&]p=([^&]+)/);
+        if (m && m[1]) {
+          var restored = "/" + decodeURIComponent(m[1]);
+          history.replaceState(null, "", restored);
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

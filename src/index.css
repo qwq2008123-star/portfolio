@@ -1,0 +1,74 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300..700&family=Instrument+Serif:ital@0;1&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg: 0 0% 4%;
+    --surface: 0 0% 8%;
+    --text: 0 0% 96%;
+    --muted: 0 0% 53%;
+    --stroke: 0 0% 12%;
+    --accent: 0 0% 96%;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-bg font-body text-text-primary antialiased;
+  }
+}
+
+@layer utilities {
+  /* Accent gradient — used on logo ring, hover borders, progress bars */
+  .accent-gradient {
+    background-image: linear-gradient(90deg, #89aacc 0%, #4e85bf 100%);
+  }
+
+  .accent-gradient-reverse {
+    background-image: linear-gradient(270deg, #89aacc 0%, #4e85bf 100%);
+  }
+
+  /* Animated gradient borders — pair with .accent-gradient */
+  .animated-gradient-border {
+    background-size: 200% 200%;
+    animation: gradient-shift 6s ease infinite;
+  }
+}
+
+/* Raw keyframes (referenced by Tailwind animation utilities above) */
+@keyframes scroll-down {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(200%);
+  }
+}
+
+@keyframes role-fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
