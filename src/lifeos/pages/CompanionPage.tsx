@@ -53,7 +53,9 @@ export default function CompanionPage() {
   const msgSeq = useRef(0);
   const [decision, setDecision] = useState<DecisionSpace | null>(null);
   const [decPending, setDecPending] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
+  const stickBottomRef = useRef(true);
 
   // ── 讨论模式：auto = 圆桌自动选择发言者；all = 全员一起讨论 ──
   const [mode, setMode] = useState<"auto" | "all">("auto");
@@ -75,9 +77,37 @@ export default function CompanionPage() {
     icMemoriesRef.current = state.innerCircle.memories;
   }, [specified, muted, mode, state.innerCircle.memories]);
 
+  // 自动跟随到底部。只用 scrollTop 滚动消息容器自身——
+  // scrollIntoView 会连页面窗口一起滚，把场景顶出视口（整页布局错乱）
+  const stickToBottom = () => {
+    const el = listRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  };
+  const hasMessages = !!(session && session.messages.length > 0);
+
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    stickBottomRef.current = true;
+    stickToBottom();
   }, [session?.messages.length, icPending]);
+
+  // 打字机输出会持续撑高消息内容：内容增高时继续跟随（除非用户主动上翻回看）
+  useEffect(() => {
+    const el = listRef.current;
+    const inner = innerRef.current;
+    if (!el || !inner || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => {
+      if (stickBottomRef.current) el.scrollTop = el.scrollHeight;
+    });
+    ro.observe(inner);
+    const onScroll = () => {
+      stickBottomRef.current = el.scrollTop + el.clientHeight >= el.scrollHeight - 80;
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      ro.disconnect();
+      el.removeEventListener("scroll", onScroll);
+    };
+  }, [hasMessages]);
 
   if (!state.profile || !persona) {
     return (
@@ -241,7 +271,7 @@ export default function CompanionPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6 xl:flex-row xl:h-[calc(100vh-11rem)]">
+    <div className="flex flex-col gap-6 xl:h-[calc(100vh-11rem)] xl:flex-row xl:overflow-hidden">
       {/* ── 主区：圆桌 + 对话（不被右栏高度拉伸） ── */}
       <Card className={`flex min-h-0 flex-1 flex-col self-start p-0 ${session ? "xl:h-[calc(100vh-11rem)]" : ""}`}>
         {session && (
@@ -430,7 +460,8 @@ export default function CompanionPage() {
               </p>
             </div>
           ) : (
-            <div className="flex-1 space-y-4 overflow-y-auto px-6 py-5">
+            <div ref={listRef} className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+              <div ref={innerRef} className="space-y-4">
               {session.messages.map((m, i) => {
                 if (m.roleKey === "user") {
                   return (
@@ -488,7 +519,7 @@ export default function CompanionPage() {
                   </div>
                 </div>
               )}
-              <div ref={bottomRef} />
+              </div>
             </div>
           )}
 
@@ -583,7 +614,7 @@ export default function CompanionPage() {
       </Card>
 
       {/* ── 右栏：推荐 / 邀请成员 / 记忆 / 讨论模式 ── */}
-      <div className="w-full shrink-0 space-y-5 xl:w-72">
+      <div className="w-full shrink-0 space-y-5 xl:w-72 xl:overflow-y-auto xl:pr-1">
         {!session && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
