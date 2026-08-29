@@ -8,26 +8,26 @@ interface Entry {
 
 const ENTRIES: Entry[] = [
   {
-    title: "Designing with Motion in Mind",
-    meta: "5 min read · Aug 12, 2026",
+    title: "Inner Circle｜内心圆桌上线",
+    meta: "v2.5 · 2026-08-28",
     image:
       "https://images.unsplash.com/photo-1558655146-d09347e92766?q=80&w=400&auto=format&fit=crop",
   },
   {
-    title: "Typography Is the Interface",
-    meta: "4 min read · Jul 28, 2026",
+    title: "未来模拟器：看见不同选择背后的人生",
+    meta: "v2.4 · 2026-08-27",
     image:
       "https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?q=80&w=400&auto=format&fit=crop",
   },
   {
-    title: "Shipping Side Projects",
-    meta: "6 min read · Jun 30, 2026",
+    title: "人格网络：星系可视化与服务价目",
+    meta: "v2.3 · 2026-08-26",
     image:
       "https://images.unsplash.com/photo-1493421419110-74f4e85ba126?q=80&w=400&auto=format&fit=crop",
   },
   {
-    title: "Notes on Creative Endurance",
-    meta: "3 min read · Jun 03, 2026",
+    title: "决策助手：一步到位的生活小选择",
+    meta: "v2.2 · 2026-08-25",
     image:
       "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=400&auto=format&fit=crop",
   },
@@ -67,14 +67,14 @@ export default function Journal() {
             <div className="mb-5 flex items-center gap-3">
               <span className="h-px w-8 bg-stroke" />
               <span className="text-xs uppercase tracking-[0.3em] text-muted">
-                Recent Thoughts
+                Changelog
               </span>
             </div>
             <h2 className="text-4xl leading-tight tracking-tight text-text-primary md:text-5xl lg:text-6xl">
-              Recent <em className="font-display italic">thoughts</em>
+              最近<em className="font-display italic">更新</em>
             </h2>
             <p className="mt-4 max-w-md text-sm text-muted md:text-base">
-              Notes on design, code, and the craft of building for the web.
+              产品仍在快速进化——这里是它走过的脚印。
             </p>
           </div>
 

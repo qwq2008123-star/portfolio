@@ -5,7 +5,7 @@ import { useHlsVideo } from "../hooks/useHlsVideo";
 const HLS_SRC =
   "https://stream.mux.com/Aa02T7oM1wH5Mk5EEVDYhbZ1ChcdhRsS2m1NYyx4Ua1g.m3u8";
 
-const ROLES = ["Creative", "Fullstack", "Founder", "Scholar"];
+const ROLES = ["你的第二大脑", "人生操作系统", "AI 伙伴系统", "成长引擎"];
 const ROLE_INTERVAL_MS = 2000;
 
 export default function Hero() {
@@ -64,27 +64,26 @@ export default function Hero() {
       {/* Centered content */}
       <div className="relative z-10 px-6 text-center">
         <p className="blur-in mb-8 text-xs uppercase tracking-[0.3em] text-muted">
-          COLLECTION &rsquo;26
+          AI LIFE OS · SECOND BRAIN
         </p>
 
         <h1 className="name-reveal mb-6 font-display text-6xl italic leading-[0.9] tracking-tight text-text-primary md:text-8xl lg:text-9xl">
-          Michael Smith
+          AI Life OS
         </h1>
 
         <p className="mb-6 text-base text-muted md:text-lg">
-          A{" "}
           <span
             key={roleIndex}
             className="animate-role-fade-in inline-block font-display italic text-text-primary"
           >
             {ROLES[roleIndex]}
-          </span>{" "}
-          lives in Chicago.
+          </span>
+          ，正在这里运行。
         </p>
 
         <p className="mx-auto mb-12 max-w-md text-sm text-muted md:text-base">
-          Designing seamless digital interactions by focusing on the unique
-          nuances which bring systems to life.
+          人格档案、内心圆桌、未来模拟与人格网络——
+          一个围绕你长期成长建立的 AI 内心支持系统。
         </p>
 
         <div className="inline-flex flex-wrap justify-center gap-4">
@@ -95,18 +94,18 @@ export default function Hero() {
               className="accent-gradient pointer-events-none absolute inset-[-2px] rounded-full opacity-0 transition-opacity duration-300 group-hover:opacity-100"
             />
             <span className="relative inline-block rounded-full bg-text-primary px-7 py-3.5 text-sm text-bg transition-all duration-300 hover:scale-105 hover:bg-bg hover:text-text-primary">
-              See Works
+              查看系统模块
             </span>
           </a>
 
           {/* Outlined CTA */}
-          <a href="mailto:hello@michaelsmith.com" className="group relative rounded-full">
+          <a href="/life-os" className="group relative rounded-full">
             <span
               aria-hidden="true"
               className="accent-gradient pointer-events-none absolute inset-[-2px] rounded-full opacity-0 transition-opacity duration-300 group-hover:opacity-100"
             />
             <span className="relative inline-block rounded-full border-2 border-stroke bg-bg px-7 py-3.5 text-sm text-text-primary transition-all duration-300 hover:scale-105 hover:border-transparent">
-              Reach out...
+              开始使用
             </span>
           </a>
         </div>

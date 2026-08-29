@@ -7,7 +7,7 @@ const HLS_SRC =
 
 const MARQUEE_TEXT = "BUILDING THE FUTURE • ".repeat(10);
 
-const SOCIALS = ["Twitter", "LinkedIn", "Dribbble", "GitHub"];
+const SOCIALS = [{ label: "GitHub", href: "https://github.com/qwq2008123-star/portfolio" }];
 
 function ArrowUpRight({ size = 18 }: { size?: number }) {
   return (
@@ -84,16 +84,16 @@ export default function Contact() {
       {/* CTA */}
       <div className="relative z-10 mt-12 flex flex-col items-center gap-6 px-6">
         <span className="text-xs uppercase tracking-[0.3em] text-muted">
-          Have a project in mind?
+          准备好遇见你的第二大脑了吗？
         </span>
-        <a href="mailto:hello@michaelsmith.com" className="inline-flex">
+        <a href="/life-os" className="inline-flex">
           <span className="group relative rounded-full">
             <span
               aria-hidden="true"
               className="accent-gradient pointer-events-none absolute inset-[-2px] rounded-full opacity-0 transition-opacity duration-300 group-hover:opacity-100"
             />
             <span className="relative inline-flex items-center gap-2 rounded-full bg-text-primary px-9 py-4 text-base font-medium text-bg transition-colors duration-300 group-hover:bg-transparent group-hover:text-text-primary md:text-lg">
-              hello@michaelsmith.com
+              进入 AI Life OS
               <ArrowUpRight />
             </span>
           </span>
@@ -106,12 +106,13 @@ export default function Contact() {
           <nav className="flex items-center gap-6">
             {SOCIALS.map((social) => (
               <a
-                key={social}
-                href="#"
-                onClick={(e) => e.preventDefault()}
+                key={social.label}
+                href={social.href}
+                target="_blank"
+                rel="noreferrer"
                 className="text-sm text-muted transition-colors duration-300 hover:text-text-primary"
               >
-                {social}
+                {social.label}
               </a>
             ))}
           </nav>
@@ -121,7 +122,7 @@ export default function Contact() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-green-400" />
             </span>
-            Available for projects
+            系统运行中 · 本地开发模式
           </div>
         </div>
       </div>

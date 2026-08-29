@@ -6,9 +6,9 @@ interface Stat {
 }
 
 const STATS: Stat[] = [
-  { value: "20+", label: "Years Experience" },
-  { value: "95+", label: "Projects Done" },
-  { value: "200%", label: "Satisfied Clients" },
+  { value: "6", label: "核心系统模块" },
+  { value: "5", label: "圆桌陪伴角色" },
+  { value: "10", label: "人生模拟维度" },
 ];
 
 export default function Stats() {

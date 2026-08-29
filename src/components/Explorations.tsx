@@ -125,14 +125,14 @@ export default function Explorations() {
         <div className="mb-5 flex items-center justify-center gap-3">
           <span className="h-px w-8 bg-stroke" />
           <span className="text-xs uppercase tracking-[0.3em] text-muted">
-            Explorations
+            Visual Language
           </span>
         </div>
         <h2 className="text-4xl leading-tight tracking-tight text-text-primary md:text-5xl lg:text-6xl">
-          Visual <em className="font-display italic">playground</em>
+          为思考而生的<em className="font-display italic">视觉语言</em>
         </h2>
         <p className="mt-4 max-w-md text-sm text-muted md:text-base">
-          Experiments, studies, and visual sketches from the lab.
+          深空、霓虹与呼吸感的光——系统的视觉氛围沉淀。
         </p>
         <a href="#" onClick={(e) => e.preventDefault()} className="mt-8 inline-flex">
           <span className="group relative rounded-full">

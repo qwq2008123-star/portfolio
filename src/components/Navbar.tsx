@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 const LINKS = [
-  { label: "Home", href: "#home" },
-  { label: "Work", href: "#work" },
-  { label: "Resume", href: "#contact" },
+  { label: "首页", href: "#home" },
+  { label: "系统模块", href: "#work" },
+  { label: "更新日志", href: "#journal" },
   { label: "Life OS", href: "/life-os" },
 ];
 
@@ -58,7 +58,7 @@ export default function Navbar() {
           <span className="accent-gradient-reverse absolute inset-0 rounded-full opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
           <span className="absolute inset-[2px] flex items-center justify-center rounded-full bg-bg">
             <span className="font-display text-[13px] italic leading-none text-text-primary">
-              JA
+              AI
             </span>
           </span>
         </a>
@@ -94,7 +94,7 @@ export default function Navbar() {
 
         {/* Say hi — gradient ring appears behind on hover */}
         <a
-          href="mailto:hello@michaelsmith.com"
+          href="/life-os"
           className="group relative overflow-hidden rounded-full"
         >
           <span
@@ -102,7 +102,7 @@ export default function Navbar() {
             className="accent-gradient pointer-events-none absolute inset-[-2px] rounded-full opacity-0 transition-opacity duration-300 group-hover:opacity-100"
           />
           <span className="relative flex items-center gap-1 rounded-full bg-surface px-4 py-1.5 text-xs text-text-primary backdrop-blur-md transition-colors duration-300 group-hover:bg-surface sm:px-4 sm:py-2 sm:text-sm">
-            Say hi
+            进入系统
             <ArrowUpRight />
           </span>
         </a>
