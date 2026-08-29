@@ -197,7 +197,7 @@ function ToonAvatar({ seed, size }: { seed: string; size: number }) {
   );
 }
 
-// ─── 人物人格档案数据层：按 seed 确定性生成（同一人物刷新不变） ───
+// ─── 人物档案数据层：按 seed 确定性生成（同一人物刷新不变） ───
 const SERVICE_POOL = [
   { name: "AI 产品设计", price: 28, helps: ["产品定位", "MVP 设计", "AI 功能设计", "用户流程设计"] },
   { name: "创业经验", price: 26, helps: ["商业模式梳理", "冷启动策略", "团队搭建", "融资准备"] },
@@ -282,7 +282,7 @@ const RECOMMEND_BY_TYPE: Record<MatchCandidate["type"], string> = {
   兴趣朋友: "相似的经历和节奏，让你们更容易同频。",
 };
 
-// ─── 人物人格档案抽屉 ───
+// ─── 人物档案抽屉 ───
 function DossierDrawer({
   cand,
   hue,
@@ -1019,8 +1019,8 @@ export default function NetworkPage() {
     return (
       <EmptyState
         icon="⬡"
-        title="需要先建立人格档案"
-        sub="人格网络通过人格、目标、兴趣、经历与阶段进行多维匹配。"
+        title="需要先建立星图"
+        sub="星系通过人格、目标、兴趣、经历与阶段进行多维匹配。"
       />
     );
   }
@@ -1147,7 +1147,7 @@ export default function NetworkPage() {
           )}
         </AnimatePresence>
 
-        {/* 人物人格档案抽屉 */}
+        {/* 人物档案抽屉 */}
         <AnimatePresence>
           {activeNode && (
             <DossierDrawer

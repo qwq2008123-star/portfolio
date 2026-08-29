@@ -85,8 +85,8 @@ export default function DecisionsPage() {
     return (
       <EmptyState
         icon="⚖"
-        title="需要先建立人格档案"
-        sub="日常习惯助手需要调用你的 AI 人格档案与日常计划数据。"
+        title="需要先建立星图"
+        sub="日常习惯助手需要调用你的 AI 星图与日常计划数据。"
       />
     );
   }

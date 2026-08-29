@@ -299,7 +299,7 @@ function localRoleReply(role: RoleKey, text: string, memories: ICMemory[]): stri
   return `${arr[text.length % arr.length]}${extra}`;
 }
 
-// ─── 来宾 Agent：从人格网络邀请进圆桌的社区成员 ───
+// ─── 来宾 Agent：从星系邀请进圆桌的社区成员 ───
 export interface GuestAgent {
   id: string;
   name: string;
@@ -464,7 +464,7 @@ export async function orchestrator(
     others.forEach((r, i) => messages.push({ roleKey: r, text: rest[i] }));
   }
 
-  // 来宾 Agent（从人格网络邀请进圆桌的成员）：自动模式轮换一位；全员模式全部发言；指定 IC 角色时静默
+  // 来宾 Agent（从星系邀请进圆桌的成员）：自动模式轮换一位；全员模式全部发言；指定 IC 角色时静默
   const guests = (ctx.guests ?? []).filter((g) => !ctx.muted.includes(g.id));
   if (guests.length && ctx.specified.length === 0) {
     const userTurns = history.filter((m) => m.roleKey === "user").length;

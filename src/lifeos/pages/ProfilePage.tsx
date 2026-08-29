@@ -126,7 +126,7 @@ export default function ProfilePage() {
   if (!profile || !persona) {
     return (
       <div className="py-10 text-center text-muted">
-        尚未建立人格档案。
+        尚未建立星图。
         <button onClick={() => navigate("/life-os/onboarding")} className="ml-2 text-[#89AACC] hover:text-text-primary">
           去建立 →
         </button>
@@ -363,7 +363,7 @@ export default function ProfilePage() {
               {[
                 `你最近 30 天完成了 ${Math.max(state.stats.tasksCompleted, 7)} 个任务节点，其中 AI 项目 7 个。`,
                 "你连续 21 天保持学习习惯。",
-                "你最近频繁思考创业问题（决策助手记录 ×5）。",
+                "你最近频繁思考创业问题（罗盘记录 ×5）。",
               ].map((t) => (
                 <div key={t} className="flex gap-3 rounded-2xl border border-stroke bg-bg/60 p-3">
                   <span className="text-[#89AACC]">✦</span>
@@ -372,7 +372,7 @@ export default function ProfilePage() {
               ))}
             </div>
             <p className="mt-3 text-[11px] text-muted/70">
-              这些数据用于不断更新 AI 人格档案，让它越来越接近真实的你。
+              这些数据用于不断更新 AI 星图，让它越来越接近真实的你。
             </p>
           </Panel>
 
@@ -497,7 +497,7 @@ export default function ProfilePage() {
       </Modal>
 
       {/* 编辑人格弹窗 */}
-      <Modal open={showEdit} onClose={() => setShowEdit(false)} title="编辑人格档案">
+      <Modal open={showEdit} onClose={() => setShowEdit(false)} title="编辑星图">
         {draft && (
           <div className="space-y-4">
             {(

@@ -20,7 +20,7 @@ const MODULES: Module[] = [
     spanClass: "md:col-span-7",
   },
   {
-    title: "未来模拟器",
+    title: "轨道",
     en: "Future Simulator",
     desc: "把「该不该」变成看得见的人生：多条路线 × 10 维变化 × 关键事件剧情 × 三种未来。",
     icon: "∿",
@@ -28,7 +28,7 @@ const MODULES: Module[] = [
     spanClass: "md:col-span-5",
   },
   {
-    title: "人格档案",
+    title: "星图",
     en: "Persona Profile",
     desc: "随使用进化的动态人格：能力维度、成长轨迹，以及 AI 认识你的全部依据。",
     icon: "◉",
@@ -36,7 +36,7 @@ const MODULES: Module[] = [
     spanClass: "md:col-span-5",
   },
   {
-    title: "决策助手",
+    title: "罗盘",
     en: "Daily Assistant",
     desc: "按你的「日常计划（弹性版）」一步到位拍板今天的小选择：吃什么、去哪、怎么安排。",
     icon: "⚖",
@@ -44,7 +44,7 @@ const MODULES: Module[] = [
     spanClass: "md:col-span-7",
   },
   {
-    title: "人格网络",
+    title: "星系",
     en: "Persona Network",
     desc: "星系状的人际生态：按人格匹配伙伴，浏览服务与价目，付费即可建立连接。",
     icon: "⬡",
@@ -84,7 +84,7 @@ export default function Works() {
               六大核心<em className="font-display italic">模块</em>
             </h2>
             <p className="mt-4 max-w-md text-sm text-muted md:text-base">
-              从情绪陪伴到未来模拟——每个模块都认识你，共同组成你的第二大脑。
+              从情绪陪伴到轨道推演——每个模块都认识你，共同组成你的第二大脑。
             </p>
           </div>
 

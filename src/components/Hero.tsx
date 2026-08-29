@@ -82,7 +82,7 @@ export default function Hero() {
         </p>
 
         <p className="mx-auto mb-12 max-w-md text-sm text-muted md:text-base">
-          人格档案、内心圆桌、未来模拟与人格网络——
+          星图、内心圆桌、轨道与星系——
           一个围绕你长期成长建立的 AI 内心支持系统。
         </p>
 

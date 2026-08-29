@@ -227,7 +227,7 @@ export function Radar({ traits, size = 260 }: { traits: { label: string; score: 
 
 /** AI 思考动画 */
 export function Thinking({ text = "AI 正在思考" }: { text?: string }) {
-  const steps = ["调取人格档案", "分析历史行为", "推演可能路径", "生成结论"];
+  const steps = ["调取星图", "分析历史行为", "推演可能路径", "生成结论"];
   const [step, setStep] = useState(0);
   useEffect(() => {
     const id = setInterval(() => setStep((s) => (s + 1) % steps.length), 600);

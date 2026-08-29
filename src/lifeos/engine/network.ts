@@ -245,7 +245,7 @@ export const FIXED_MEMBERS: MatchCandidate[] = [
   },
 ];
 
-// ─── 弱关系成员 + 完整名册（人格网络与内心圆桌共用，保证成员 id 跨页一致） ───
+// ─── 弱关系成员 + 完整名册（星系与内心圆桌共用，保证成员 id 跨页一致） ───
 export function weakTies(profile: UserProfile): MatchCandidate[] {
   const rng = createRng(hashString(profile.name + "weakties"));
   const WEAK_ROLES = ["独立音乐人", "山系户外玩家", "播客主播", "飞盘俱乐部主理人"];

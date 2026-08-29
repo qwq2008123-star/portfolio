@@ -118,7 +118,7 @@ function reducer(state: OSState, action: Action): OSState {
         ...state,
         profile: action.profile,
         memories: [
-          mem("profile", `完善了人格档案（${action.profile.occupation} · ${action.profile.mbti}）`, 3),
+          mem("profile", `完善了星图（${action.profile.occupation} · ${action.profile.mbti}）`, 3),
           ...state.memories,
         ],
       };

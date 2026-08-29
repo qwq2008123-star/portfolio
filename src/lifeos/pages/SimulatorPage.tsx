@@ -34,7 +34,7 @@ const EXAMPLES = [
 
 const THINK_STAGES = [
   "正在理解你的当前状态…",
-  "结合人格档案推演人生路线…",
+  "结合星图推演人生路线…",
   "模拟关键事件与连锁反应…",
   "生成风险闭环与行动建议…",
 ];
@@ -99,7 +99,7 @@ export default function SimulatorPage() {
     return (
       <EmptyState
         icon="∿"
-        title="需要先建立人格档案"
+        title="需要先建立星图"
         sub="模拟器会基于你的人格、目标、能力与处境推演不同选择的人生路径。"
       />
     );

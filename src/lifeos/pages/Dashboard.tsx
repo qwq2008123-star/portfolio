@@ -6,8 +6,8 @@ import { Card, Chip, ProgressBar } from "../components/ui";
 // ─── 总览仪表盘：人格摘要 + 今日任务 + 快速入口 + 成长时间线 ───
 
 const QUICK_ACTIONS = [
-  { to: "/life-os/simulator", icon: "∿", title: "未来模拟器", desc: "推演不同选择的 3/5/10 年" },
-  { to: "/life-os/decisions", icon: "⚖", title: "决策助手", desc: "用结构化分析破解纠结" },
+  { to: "/life-os/simulator", icon: "∿", title: "轨道", desc: "每条选择是一条轨道，推演它通向哪里" },
+  { to: "/life-os/decisions", icon: "⚖", title: "罗盘", desc: "重大选择时的指向" },
   { to: "/life-os/companion", icon: "☾", title: "情绪陪伴", desc: "四种模式的长期伙伴" },
 ];
 
@@ -60,7 +60,7 @@ export default function Dashboard() {
               </div>
               <ProgressBar value={persona?.completion ?? 0} />
               <p className="mt-2 text-[11px] leading-relaxed text-muted">
-                随着你使用模拟器、决策助手与完成任务，AI 会越来越了解你。
+                随着你使用轨道、罗盘与完成任务，AI 会越来越了解你。
               </p>
             </div>
           </div>

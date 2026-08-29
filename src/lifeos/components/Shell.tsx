@@ -5,20 +5,20 @@ import { ProgressBar } from "./ui";
 
 const NAV = [
   { to: "/life-os", label: "总览", icon: "◈", end: true },
-  { to: "/life-os/decisions", label: "决策助手", icon: "⚖" },
-  { to: "/life-os/simulator", label: "未来模拟器", icon: "∿" },
-  { to: "/life-os/profile", label: "人格档案", icon: "◉" },
+  { to: "/life-os/decisions", label: "罗盘", icon: "⚖" },
+  { to: "/life-os/simulator", label: "轨道", icon: "∿" },
+  { to: "/life-os/profile", label: "星图", icon: "◉" },
   { to: "/life-os/companion", label: "情绪陪伴", icon: "☾" },
-  { to: "/life-os/network", label: "人格网络", icon: "⬡" },
+  { to: "/life-os/network", label: "星系", icon: "⬡" },
 ];
 
 const TITLES: Record<string, string> = {
   "/life-os": "总览",
-  "/life-os/profile": "AI 人格档案",
-  "/life-os/simulator": "AI 未来模拟器",
-  "/life-os/decisions": "AI 人生决策助手",
+  "/life-os/profile": "AI 星图",
+  "/life-os/simulator": "AI 轨道",
+  "/life-os/decisions": "AI 罗盘",
   "/life-os/companion": "AI 情绪陪伴",
-  "/life-os/network": "AI 人格生态网络",
+  "/life-os/network": "AI 星系",
 };
 
 export default function Shell() {

@@ -102,7 +102,7 @@ export function generatePlan(goal: string, profile: UserProfile): LifePlan {
     createdAt: now,
     tasks,
     adjustments: 0,
-    lastNote: "AI 已根据你的人格档案生成了初始计划，执行 3 天后将自动优化。",
+    lastNote: "AI 已根据你的星图生成了初始计划，执行 3 天后将自动优化。",
   };
 }
 

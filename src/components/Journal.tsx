@@ -14,19 +14,19 @@ const ENTRIES: Entry[] = [
       "https://images.unsplash.com/photo-1558655146-d09347e92766?q=80&w=400&auto=format&fit=crop",
   },
   {
-    title: "未来模拟器：看见不同选择背后的人生",
+    title: "轨道：看见不同选择背后的人生",
     meta: "v2.4 · 2026-08-27",
     image:
       "https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?q=80&w=400&auto=format&fit=crop",
   },
   {
-    title: "人格网络：星系可视化与服务价目",
+    title: "星系：让每个成员成为一颗星",
     meta: "v2.3 · 2026-08-26",
     image:
       "https://images.unsplash.com/photo-1493421419110-74f4e85ba126?q=80&w=400&auto=format&fit=crop",
   },
   {
-    title: "决策助手：一步到位的生活小选择",
+    title: "罗盘：一步到位的生活小选择",
     meta: "v2.2 · 2026-08-25",
     image:
       "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=400&auto=format&fit=crop",
