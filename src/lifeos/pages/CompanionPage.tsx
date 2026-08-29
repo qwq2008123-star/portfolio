@@ -233,8 +233,8 @@ export default function CompanionPage() {
   return (
     <div className="flex flex-col gap-6 xl:flex-row xl:h-[calc(100vh-11rem)]">
       {/* ── 主区：圆桌 + 对话（不被右栏高度拉伸） ── */}
-      <Card className="flex min-h-0 flex-1 flex-col self-start p-0 xl:h-[calc(100vh-13.5rem)] xl:max-h-[820px]">
-        {/* 圆桌场景 */}
+      <Card className={`flex min-h-0 flex-1 flex-col self-start p-0 ${session ? "xl:h-[calc(100vh-11rem)]" : ""}`}>
+        {session && (
         <div className="relative h-[300px] shrink-0 overflow-hidden rounded-t-3xl border-b border-stroke">
           <div
             className="absolute inset-0"
@@ -392,6 +392,7 @@ export default function CompanionPage() {
             </div>
           </div>
         </div>
+        )}
 
         {/* 对话区 */}
         <div className="flex min-h-0 flex-1 flex-col">
