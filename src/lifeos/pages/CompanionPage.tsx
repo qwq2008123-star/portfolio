@@ -284,6 +284,7 @@ export default function CompanionPage() {
                   </div>
                   <p className="mt-1 whitespace-nowrap text-[10px]" style={{ color: status === "speaking" ? def.hue : undefined }}>
                     {def.label}
+                    <span className="ml-1 text-[8px] text-muted/80">{def.mbti}</span>
                   </p>
                   {status === "speaking" && (
                     <span className="text-[8px] uppercase tracking-widest" style={{ color: def.hue }}>
@@ -510,7 +511,9 @@ export default function CompanionPage() {
                       <p className="text-xs text-text-primary">
                         {def.icon} {def.label}
                       </p>
-                      <p className="text-[10px] text-muted">{def.en}</p>
+                      <p className="text-[10px] text-muted">
+                        {def.en} · <span style={{ color: def.hue }}>{def.mbti}</span>
+                      </p>
                     </button>
                     <button
                       onClick={() => {
