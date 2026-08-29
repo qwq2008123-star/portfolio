@@ -10,6 +10,20 @@ import {
   orchestrator,
 } from "../engine/innerCircle";
 import { COMPANION_MODES, type ChatMessage, type CompanionMode, type DecisionSpace, type ICMessage, type ICSession, type RoleKey } from "../types";
+
+// 自然语言指定角色：「我想和妈妈聊聊」「不想听建议，只想让朋友陪着」「让导师帮我分析」…
+const ROLE_INTENT: Array<[RegExp, RoleKey]> = [
+  [/(妈妈|母亲)/, "mother"],
+  [/(导师|帮我分析|客观意见|客观地)/, "mentor"],
+  [/(朋友|不想听建议|只想让朋友|陪着我)/, "friend"],
+  [/(内在小孩|小时候的我自己|内心深处那个)/, "child"],
+  [/(未来的?自己|十年后的我)/, "future"],
+];
+
+function detectRoleIntent(text: string): RoleKey | null {
+  for (const [re, key] of ROLE_INTENT) if (re.test(text)) return key;
+  return null;
+}
 import { Card, GhostButton, TypeOut } from "../components/ui";
 
 // ─── AI Inner Circle｜内心圆桌：多角色陪伴支持系统 ───
@@ -60,6 +74,11 @@ export default function CompanionPage() {
     if (!trimmed || icPending) return;
     setIcInput("");
 
+    // 自然语言指定角色（用户意图优先于自动评分）
+    const intent = detectRoleIntent(trimmed);
+    const effectiveSpecified = intent ?? specified;
+    if (intent && intent !== specified) setSpecified(intent);
+
     const userMsg: ICMessage = { id: `icu-${Date.now()}`, roleKey: "user", text: trimmed, at: Date.now() };
     const baseMessages = [...(session?.messages ?? []), userMsg];
     const current: ICSession = session ?? {
@@ -75,7 +94,7 @@ export default function CompanionPage() {
       profile,
       persona,
       memories: icMemories,
-      specified,
+      specified: effectiveSpecified,
       muted,
     });
 
@@ -154,6 +173,16 @@ export default function CompanionPage() {
     { key: "future", x: 20, y: 72 },
   ];
   const lastPrimary = [...(session?.messages ?? [])].reverse().find((m) => m.roleKey !== "user");
+  const speakingRole =
+    lastPrimary && lastPrimary.roleKey !== "user" ? (lastPrimary.roleKey as RoleKey) : null;
+  // 每个角色与用户的关系记忆（邀请成员卡片展示）
+  const roleRelationship = (key: RoleKey): string | null => {
+    const weight = { confirmed: 3, explicit: 2, observed: 1 } as const;
+    const known = icMemories.filter((m) => m.roles.includes(key));
+    if (!known.length) return null;
+    return known.sort((a, b) => weight[b.kind] - weight[a.kind] || b.at - a.at)[0].content;
+  };
+  const speakerSeat = speakingRole ? SEATS.find((s2) => s2.key === speakingRole) : undefined;
   const roleStatus = (key: RoleKey) => {
     if (muted.includes(key)) return "silent";
     if (icPending && session && session.messages[session.messages.length - 1]?.roleKey === "user") return "thinking";
@@ -176,15 +205,35 @@ export default function CompanionPage() {
                 "#070609",
             }}
           />
-          {/* 圆桌 */}
-          <div
-            className="absolute left-1/2 top-[42%] h-[46%] w-[62%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-[#E8C86A]/25"
+          {/* 圆桌：发言时轻微转向发言者（镜头感） */}
+          <div className="absolute left-1/2 top-[42%] h-[46%] w-[62%] -translate-x-1/2 -translate-y-1/2">
+          <motion.div
+            className="h-full w-full rounded-[50%] border border-[#E8C86A]/25"
             style={{
               background:
                 "radial-gradient(ellipse at 50% 40%, rgba(232,200,106,0.10), rgba(90,70,40,0.08) 60%, transparent 75%)",
               boxShadow: "inset 0 0 60px rgba(232,200,106,0.08), 0 0 50px rgba(232,200,106,0.05)",
             }}
+            animate={{ x: speakerSeat ? (speakerSeat.x - 50) * 3 : 0 }}
+            transition={{ duration: 1.2, ease: "easeInOut" }}
           />
+          </div>
+          {/* 灯光聚焦（发言者以外压暗） */}
+          <AnimatePresence>
+            {speakingRole && speakerSeat && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.8 }}
+                className="pointer-events-none absolute inset-0 z-[5]"
+                style={{
+                  background: `radial-gradient(ellipse 38% 42% at ${speakerSeat.x}% ${speakerSeat.y}%, transparent 40%, rgba(0,0,0,0.5) 100%)`,
+                }}
+              />
+            )}
+          </AnimatePresence>
+
           {/* 角色座位 */}
           {SEATS.map((seat) => {
             const def = IC_ROLES[seat.key];
@@ -197,8 +246,16 @@ export default function CompanionPage() {
                 title={muted.includes(seat.key) ? "已静音，点击恢复" : `邀请${def.label}发言`}
                 className="absolute z-10 -translate-x-1/2 -translate-y-1/2 focus:outline-none"
                 style={{ left: `${seat.x}%`, top: `${seat.y}%` }}
-                animate={{ opacity: dim ? 0.3 : 1 }}
-                transition={{ duration: 0.4 }}
+                animate={{
+                  opacity: dim
+                    ? 0.3
+                    : speakingRole
+                      ? seat.key === speakingRole
+                        ? 1
+                        : 0.45
+                      : 1,
+                }}
+                transition={{ duration: 0.6 }}
               >
                 <motion.div
                   animate={{ scale: status === "speaking" ? 1.1 : 1 }}
@@ -443,6 +500,12 @@ export default function CompanionPage() {
                     </button>
                   </div>
                   <p className="mt-1 text-[10px] leading-relaxed text-muted/80">{def.desc}</p>
+                  <p className="mt-1.5 border-t border-stroke/60 pt-1.5 text-[10px] italic leading-relaxed text-muted/70">
+                    {(() => {
+                      const rel = roleRelationship(key);
+                      return rel ? `TA 记得：${rel}` : "TA 还在认识你…";
+                    })()}
+                  </p>
                 </div>
               );
             })}
