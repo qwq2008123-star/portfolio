@@ -232,8 +232,8 @@ export default function CompanionPage() {
 
   return (
     <div className="flex flex-col gap-6 xl:flex-row">
-      {/* ── 主区：圆桌 + 对话 ── */}
-      <Card className="flex min-h-0 flex-1 flex-col p-0">
+      {/* ── 主区：圆桌 + 对话（不被右栏高度拉伸） ── */}
+      <Card className="flex min-h-0 flex-1 flex-col self-start p-0 xl:h-[calc(100vh-13.5rem)] xl:max-h-[820px]">
         {/* 圆桌场景 */}
         <div className="relative h-[300px] shrink-0 overflow-hidden rounded-t-3xl border-b border-stroke">
           <div
