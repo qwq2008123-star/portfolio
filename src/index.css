@@ -72,3 +72,11 @@
     background-position: 0% 50%;
   }
 }
+
+/* 星露谷风像素小人待机/发言动画（steps 保持像素跳跃感） */
+@keyframes pixel-bob {
+  0%, 49% { transform: translateY(0); }
+  50%, 100% { transform: translateY(-4%); }
+}
+.pixel-idle { animation: pixel-bob 1.2s steps(1) infinite; }
+.pixel-speaking { animation: pixel-bob 0.55s steps(1) infinite; }

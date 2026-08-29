@@ -24,6 +24,7 @@ function detectRoleIntent(text: string): RoleKey | null {
   return null;
 }
 import { Card, GhostButton, TypeOut } from "../components/ui";
+import { PixelPerson } from "../components/PixelPerson";
 
 // ─── AI Inner Circle｜内心圆桌：多角色陪伴支持系统 ───
 // 圆桌场景 + 动态发言机制 + 角色关系记忆 + 用户控制权 + 讨论模式（自动/全员）
@@ -274,19 +275,12 @@ export default function CompanionPage() {
                 transition={{ duration: 0.6 }}
               >
                 <motion.div
-                  animate={{ scale: status === "speaking" ? 1.1 : 1 }}
+                  animate={{ scale: status === "speaking" ? 1.12 : 1 }}
                   transition={{ duration: 0.5 }}
                   className="flex flex-col items-center"
                 >
-                  <div
-                    className="flex h-12 w-12 items-center justify-center rounded-full border text-lg backdrop-blur-md"
-                    style={{
-                      borderColor: status === "speaking" ? def.hue : "rgba(137,170,204,0.3)",
-                      background: "rgba(11,16,32,0.85)",
-                      boxShadow: status === "speaking" ? `0 0 26px ${def.hue}88` : "none",
-                    }}
-                  >
-                    {def.icon}
+                  <div className={status === "speaking" ? "pixel-speaking" : "pixel-idle"}>
+                    <PixelPerson variant={seat.key} size={58} speaking={status === "speaking"} />
                   </div>
                   <p className="mt-1 whitespace-nowrap text-[10px]" style={{ color: status === "speaking" ? def.hue : undefined }}>
                     {def.label}
@@ -309,10 +303,8 @@ export default function CompanionPage() {
           {/* 用户座位 */}
           <div className="absolute bottom-[4%] left-1/2 z-10 -translate-x-1/2">
             <div className="flex flex-col items-center">
-              <div className="accent-gradient flex h-12 w-12 items-center justify-center rounded-full p-[2px]">
-                <div className="flex h-full w-full items-center justify-center rounded-full bg-[#0A0F1E] text-sm">
-                  {(state.profile.name || "你").slice(0, 1)}
-                </div>
+              <div className="pixel-idle">
+                <PixelPerson variant="user" size={54} />
               </div>
               <p className="mt-1 text-[10px] text-muted">{state.profile.name || "你"}（你）</p>
             </div>
