@@ -413,12 +413,13 @@ export async function orchestrator(
   const ranked = ROLE_ORDER.filter((r) => !ctx.muted.includes(r)).sort((a, b) => score(b) - score(a));
   const pool = ctx.specified.length ? ranked.filter((r) => ctx.specified.includes(r)) : ranked;
   const primary = pool[0] ?? "friend";
-  // 用户指定角色时：由选中的成员依次发言，不触发自动副发言
-  const secondary = ctx.specified.length
-    ? null
-    : analysis.secondary && analysis.secondary !== primary && !ctx.muted.includes(analysis.secondary)
-      ? analysis.secondary
-      : score(ranked[1]) - score(primary) < 0.12 ? null : ranked[1];
+  // 指定角色时由选中成员依次发言；全员模式所有角色已发言——均不触发副发言
+  const secondary =
+    ctx.specified.length || ctx.mode === "all"
+      ? null
+      : analysis.secondary && analysis.secondary !== primary && !ctx.muted.includes(analysis.secondary)
+        ? analysis.secondary
+        : score(ranked[1]) - score(primary) < 0.12 ? null : ranked[1];
 
   const messages: Array<{ roleKey: string; name?: string; hue?: string; text: string }> = [];
   let primaryText = "";
