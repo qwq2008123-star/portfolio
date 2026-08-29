@@ -112,7 +112,7 @@ export default function CompanionPage() {
   if (!state.profile || !persona) {
     return (
       <Card className="py-10 text-center text-muted">
-        需要先建立人格档案，圆桌上的角色才能认识你。
+        需要先建立星图，圆桌上的角色才能认识你。
       </Card>
     );
   }
@@ -120,7 +120,7 @@ export default function CompanionPage() {
   const icMemories = state.innerCircle.memories;
   const recommendation = recommendRole(icMemories, state.moods);
 
-  // 被邀请进圆桌的来宾成员（人格网络里点「邀请加入圆桌」的）
+  // 被邀请进圆桌的来宾成员（星系里点「邀请加入圆桌」的）
   const guestAgents = useMemo<GuestAgent[]>(() => {
     if (!state.roundtableGuests?.length || !state.profile || !persona) return [];
     const byId = new Map<string, MatchCandidate>();
@@ -247,11 +247,11 @@ export default function CompanionPage() {
 
   // 座位位置（画布百分比）
   const SEATS: Array<{ key: RoleKey; x: number; y: number }> = [
-    { key: "mother", x: 50, y: 10 },
-    { key: "mentor", x: 88, y: 36 },
-    { key: "friend", x: 12, y: 36 },
-    { key: "child", x: 80, y: 72 },
-    { key: "future", x: 20, y: 72 },
+    { key: "mother", x: 50, y: 22 },
+    { key: "mentor", x: 88, y: 34 },
+    { key: "friend", x: 12, y: 34 },
+    { key: "child", x: 80, y: 68 },
+    { key: "future", x: 20, y: 68 },
   ];
   const lastPrimary = [...(session?.messages ?? [])].reverse().find((m) => m.roleKey !== "user");
   const speakingRole =
@@ -271,11 +271,11 @@ export default function CompanionPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6 xl:h-[calc(100vh-11rem)] xl:flex-row xl:overflow-hidden">
+    <div className="flex flex-col gap-6 xl:h-[max(calc(100vh-11rem),540px)] xl:flex-row xl:overflow-hidden">
       {/* ── 主区：圆桌 + 对话（不被右栏高度拉伸） ── */}
-      <Card className={`flex min-h-0 flex-1 flex-col self-start p-0 ${session ? "xl:h-[calc(100vh-11rem)]" : ""}`}>
+      <Card className={`flex min-h-0 flex-1 flex-col self-start p-0 ${session ? "xl:h-[calc(100vh-11rem)] xl:min-h-[540px]" : ""}`}>
         {session && (
-        <div className="relative h-[300px] shrink-0 overflow-hidden rounded-t-3xl border-b border-stroke">
+        <div className="relative h-[clamp(240px,40vh,300px)] shrink-0 overflow-hidden rounded-t-3xl border-b border-stroke">
           <div
             className="absolute inset-0"
             style={{
@@ -299,8 +299,8 @@ export default function CompanionPage() {
             {(speakingRole === "user" || speakingRole) && (() => {
               const seatIdx = SEATS.findIndex((s2) => s2.key === speakingRole);
               const guestIdx = guestAgents.findIndex((g) => g.id === speakingRole);
-              const sx = seatIdx >= 0 ? SEATS[seatIdx].x : guestIdx >= 0 ? (guestIdx === 0 ? 28 : 72) : 50;
-              const sy = seatIdx >= 0 ? SEATS[seatIdx].y : guestIdx >= 0 ? 76 : 42;
+              const sx = seatIdx >= 0 ? SEATS[seatIdx].x : guestIdx >= 0 ? (guestIdx === 0 ? 30 : 70) : 50;
+              const sy = seatIdx >= 0 ? SEATS[seatIdx].y : guestIdx >= 0 ? 60 : 42;
               return (
                 <motion.div
                   initial={{ opacity: 0 }}
@@ -381,9 +381,9 @@ export default function CompanionPage() {
               </motion.button>
             );
           })}
-          {/* 来宾座位（从人格网络邀请的成员） */}
+          {/* 来宾座位（从星系邀请的成员） */}
           {guestAgents.slice(0, 2).map((g, gi) => {
-            const pos = gi === 0 ? { x: 26, y: 76 } : { x: 74, y: 76 };
+            const pos = gi === 0 ? { x: 30, y: 60 } : { x: 70, y: 60 };
             const dim = muted.includes(g.id);
             const isSpeaking = speakingRole === g.id;
             return (
@@ -554,8 +554,8 @@ export default function CompanionPage() {
           </AnimatePresence>
 
           {/* 输入区 */}
-          <div className="border-t border-stroke px-6 py-4">
-            <div className="mb-3 flex justify-end">
+          <div className="shrink-0 border-t border-stroke px-6 py-3">
+            <div className="mb-2 flex justify-end">
               <button
                 onClick={() => {
                   setSession(null);
@@ -567,7 +567,7 @@ export default function CompanionPage() {
               </button>
             </div>
             {session && session.messages.length >= 6 && !decision && (
-              <div className="mb-3 flex justify-center">
+              <div className="mb-2 flex justify-center">
                 <button
                   onClick={() => void openDecision()}
                   disabled={decPending}
@@ -599,7 +599,7 @@ export default function CompanionPage() {
                       ? `和${specified.length}位成员一起聊…`
                       : "说什么都行，圆桌会判断谁来回应…"
                 }
-                className="flex-1 rounded-xl border border-stroke bg-bg px-4 py-3 text-sm outline-none transition-colors placeholder:text-muted focus:border-[#89AACC]/50"
+                className="flex-1 rounded-xl border border-stroke bg-bg px-4 py-2.5 text-sm outline-none transition-colors placeholder:text-muted focus:border-[#89AACC]/50"
               />
               <button
                 onClick={() => enqueueIC(icInput)}
@@ -687,7 +687,7 @@ export default function CompanionPage() {
         {guestAgents.length > 0 && (
           <Card>
             <p className="mb-1 text-sm text-text-primary">来宾 · 已在圆桌</p>
-            <p className="mb-3 text-[11px] text-muted">从人格网络邀请的成员，正在旁听圆桌讨论</p>
+            <p className="mb-3 text-[11px] text-muted">从星系邀请的成员，正在旁听圆桌讨论</p>
             <div className="space-y-2">
               {guestAgents.map((g) => (
                 <div key={g.id} className={`rounded-xl border p-2.5 ${muted.includes(g.id) ? "border-stroke opacity-45" : "border-[#89AACC]/30 bg-bg/60"}`}>
