@@ -5,9 +5,9 @@ import { ProgressBar } from "./ui";
 
 const NAV = [
   { to: "/life-os", label: "总览", icon: "◈", end: true },
-  { to: "/life-os/profile", label: "人格档案", icon: "◉" },
-  { to: "/life-os/simulator", label: "未来模拟器", icon: "∿" },
   { to: "/life-os/decisions", label: "决策助手", icon: "⚖" },
+  { to: "/life-os/simulator", label: "未来模拟器", icon: "∿" },
+  { to: "/life-os/profile", label: "人格档案", icon: "◉" },
   { to: "/life-os/companion", label: "情绪陪伴", icon: "☾" },
   { to: "/life-os/network", label: "人格网络", icon: "⬡" },
 ];
