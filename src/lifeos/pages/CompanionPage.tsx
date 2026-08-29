@@ -8,7 +8,7 @@ import {
   buildDecisionSpace,
   orchestrator,
 } from "../engine/innerCircle";
-import { type DecisionSpace, type ICMessage, type ICSession, type RoleKey } from "../types";
+import { type DecisionSpace, type ICMemory, type ICMessage, type ICSession, type RoleKey } from "../types";
 
 // 自然语言指定角色：「我想和妈妈聊聊」「不想听建议，只想让朋友陪着」「让导师帮我分析」…
 const ROLE_INTENT: Array<[RegExp, RoleKey]> = [
@@ -37,12 +37,28 @@ export default function CompanionPage() {
   const [icPending, setIcPending] = useState(false);
   const [specified, setSpecified] = useState<RoleKey | null>(null);
   const [muted, setMuted] = useState<RoleKey[]>([]);
+  // 队列化发送：回复生成期间再发的内容排队处理，永不丢失
+  const queueRef = useRef<string[]>([]);
+  const processingRef = useRef(false);
+  const sessionRef = useRef<ICSession | null>(null);
+  const specifiedRef = useRef<RoleKey | null>(null);
+  const mutedRef = useRef<RoleKey[]>([]);
+  const modeRef = useRef<"auto" | "all">("auto");
+  const icMemoriesRef = useRef<ICMemory[]>([]);
+  const msgSeq = useRef(0);
   const [decision, setDecision] = useState<DecisionSpace | null>(null);
   const [decPending, setDecPending] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // ── 讨论模式：auto = 圆桌自动选择发言者；all = 全员一起讨论 ──
   const [mode, setMode] = useState<"auto" | "all">("auto");
+
+  useEffect(() => {
+    specifiedRef.current = specified;
+    mutedRef.current = muted;
+    modeRef.current = mode;
+    icMemoriesRef.current = state.innerCircle.memories;
+  }, [specified, muted, mode, state.innerCircle.memories]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -59,64 +75,83 @@ export default function CompanionPage() {
   const icMemories = state.innerCircle.memories;
   const recommendation = recommendRole(icMemories, state.moods);
 
-  // ── 圆桌发言 ──
+  // ── 圆桌发言（队列化：回复生成期间再发的内容排队处理，永不丢失） ──
   const profile = state.profile;
-  const sendIC = async (text: string) => {
-    const trimmed = text.trim();
-    if (!trimmed || icPending) return;
+  const enqueueIC = (raw: string) => {
+    const trimmed = raw.trim();
+    if (!trimmed) return;
     setIcInput("");
+    queueRef.current.push(trimmed);
+    void drainQueue();
+  };
 
-    // 自然语言指定角色（用户意图优先于自动评分）
-    const intent = detectRoleIntent(trimmed);
-    const effectiveSpecified = intent ?? specified;
-    if (intent && intent !== specified) setSpecified(intent);
-
-    const userMsg: ICMessage = { id: `icu-${Date.now()}`, roleKey: "user", text: trimmed, at: Date.now() };
-    const baseMessages = [...(session?.messages ?? []), userMsg];
-    const current: ICSession = session ?? {
-      id: `ics-${Date.now()}`,
-      startedAt: Date.now(),
-      messages: baseMessages,
-      primaryRole: specified ?? recommendRole(icMemories, state.moods).role,
-    };
-    setSession(current);
+  const drainQueue = async () => {
+    if (processingRef.current) return;
+    processingRef.current = true;
     setIcPending(true);
+    try {
+      while (queueRef.current.length > 0) {
+        const text = queueRef.current.shift()!;
+        msgSeq.current += 1;
 
-    const reply = await orchestrator(trimmed, current.messages, {
-      profile,
-      persona,
-      memories: icMemories,
-      specified: effectiveSpecified,
-      muted,
-      mode,
-    });
+        // 自然语言指定角色（用户意图优先于自动评分）
+        const intent = detectRoleIntent(text);
+        const effectiveSpecified = intent ?? specifiedRef.current;
+        if (intent && intent !== specifiedRef.current) setSpecified(intent);
+        specifiedRef.current = effectiveSpecified;
 
-    const roleMessages: ICMessage[] = reply.messages.map((m, i) => ({
-      id: `ica-${Date.now()}-${i}`,
-      roleKey: m.roleKey,
-      text: m.text,
-      at: Date.now(),
-      emotions: i === 0 ? reply.emotions : undefined,
-      need: i === 0 ? reply.need : undefined,
-    }));
-    const next: ICSession = {
-      ...current,
-      messages: [...current.messages, ...roleMessages],
-      primaryRole: reply.primary,
-    };
-    setSession(next);
-    setIcPending(false);
+        const userMsg: ICMessage = { id: `icu-${Date.now()}-${msgSeq.current}`, roleKey: "user", text, at: Date.now() };
+        const baseMessages = [...(sessionRef.current?.messages ?? []), userMsg];
+        const current: ICSession = sessionRef.current ?? {
+          id: `ics-${Date.now()}`,
+          startedAt: Date.now(),
+          messages: baseMessages,
+          primaryRole: effectiveSpecified ?? recommendRole(icMemoriesRef.current, state.moods).role,
+        };
+        sessionRef.current = { ...current, messages: baseMessages };
+        setSession(sessionRef.current);
 
-    // 持久化：会话 + 新记忆（observed 待确认）
-    const newMemories = [
-      ...reply.newMemories.map((m) => ({ ...m, roles: [reply.primary, ...m.roles] })),
-      ...icMemories,
-    ].slice(0, 200);
-    dispatch({
-      type: "icUpdate",
-      memories: newMemories,
-      sessions: [next, ...state.innerCircle.sessions.filter((s) => s.id !== next.id)].slice(0, 10),
-    });
+        const reply = await orchestrator(text, baseMessages, {
+          profile,
+          persona,
+          memories: icMemoriesRef.current,
+          specified: effectiveSpecified,
+          muted: mutedRef.current,
+          mode: modeRef.current,
+        });
+
+        const roleMessages: ICMessage[] = reply.messages.map((m, i) => ({
+          id: `ica-${Date.now()}-${msgSeq.current}-${i}`,
+          roleKey: m.roleKey,
+          text: m.text,
+          at: Date.now(),
+          emotions: i === 0 ? reply.emotions : undefined,
+          need: i === 0 ? reply.need : undefined,
+        }));
+        const next: ICSession = {
+          ...current,
+          messages: [...baseMessages, ...roleMessages],
+          primaryRole: reply.primary,
+        };
+        sessionRef.current = next;
+        setSession(next);
+
+        // 持久化：会话 + 新记忆（observed 待确认）
+        const newMemories = [
+          ...reply.newMemories.map((m) => ({ ...m, roles: [reply.primary, ...m.roles] })),
+          ...icMemoriesRef.current,
+        ].slice(0, 200);
+        icMemoriesRef.current = newMemories;
+        dispatch({
+          type: "icUpdate",
+          memories: newMemories,
+          sessions: [next, ...state.innerCircle.sessions.filter((s) => s.id !== next.id)].slice(0, 10),
+        });
+      }
+    } finally {
+      processingRef.current = false;
+      setIcPending(false);
+    }
   };
 
   const confirmMemory = (id: string) => {
@@ -354,7 +389,9 @@ export default function CompanionPage() {
                           />
                         ))}
                       </div>
-                      <span className="text-xs text-muted">圆桌正在倾听…</span>
+                      <span className="text-xs text-muted">
+                        圆桌正在倾听…{queueRef.current.length > 0 && `（还有 ${queueRef.current.length} 条排队）`}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -410,13 +447,13 @@ export default function CompanionPage() {
               <input
                 value={icInput}
                 onChange={(e) => setIcInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && void sendIC(icInput)}
+                onKeyDown={(e) => { if (e.key === "Enter") enqueueIC(icInput); }}
                 placeholder={specified ? `和${IC_ROLES[specified].label}聊聊…` : "说什么都行，圆桌会判断谁来回应…"}
                 className="flex-1 rounded-xl border border-stroke bg-bg px-4 py-3 text-sm outline-none transition-colors placeholder:text-muted focus:border-[#89AACC]/50"
               />
               <button
-                onClick={() => void sendIC(icInput)}
-                disabled={!icInput.trim() || icPending}
+                onClick={() => enqueueIC(icInput)}
+                disabled={!icInput.trim()}
                 className="accent-gradient rounded-xl px-5 text-sm font-medium text-bg transition-opacity disabled:opacity-40"
               >
                 发送
