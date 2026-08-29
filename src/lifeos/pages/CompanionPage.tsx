@@ -35,13 +35,13 @@ export default function CompanionPage() {
   const [session, setSession] = useState<ICSession | null>(null);
   const [icInput, setIcInput] = useState("");
   const [icPending, setIcPending] = useState(false);
-  const [specified, setSpecified] = useState<RoleKey | null>(null);
+  const [specified, setSpecified] = useState<RoleKey[]>([]);
   const [muted, setMuted] = useState<RoleKey[]>([]);
   // 队列化发送：回复生成期间再发的内容排队处理，永不丢失
   const queueRef = useRef<string[]>([]);
   const processingRef = useRef(false);
   const sessionRef = useRef<ICSession | null>(null);
-  const specifiedRef = useRef<RoleKey | null>(null);
+  const specifiedRef = useRef<RoleKey[]>([]);
   const mutedRef = useRef<RoleKey[]>([]);
   const modeRef = useRef<"auto" | "all">("auto");
   const icMemoriesRef = useRef<ICMemory[]>([]);
@@ -96,8 +96,8 @@ export default function CompanionPage() {
 
         // 自然语言指定角色（用户意图优先于自动评分）
         const intent = detectRoleIntent(text);
-        const effectiveSpecified = intent ?? specifiedRef.current;
-        if (intent && intent !== specifiedRef.current) setSpecified(intent);
+        const effectiveSpecified = intent ? [intent] : specifiedRef.current;
+        if (intent) setSpecified([intent]);
         specifiedRef.current = effectiveSpecified;
 
         const userMsg: ICMessage = { id: `icu-${Date.now()}-${msgSeq.current}`, roleKey: "user", text, at: Date.now() };
@@ -106,7 +106,7 @@ export default function CompanionPage() {
           id: `ics-${Date.now()}`,
           startedAt: Date.now(),
           messages: baseMessages,
-          primaryRole: effectiveSpecified ?? recommendRole(icMemoriesRef.current, state.moods).role,
+          primaryRole: effectiveSpecified[0] ?? recommendRole(icMemoriesRef.current, state.moods).role,
         };
         sessionRef.current = { ...current, messages: baseMessages };
         setSession(sessionRef.current);
@@ -252,8 +252,14 @@ export default function CompanionPage() {
             return (
               <motion.button
                 key={seat.key}
-                onClick={() => setSpecified(specified === seat.key ? null : seat.key)}
-                title={muted.includes(seat.key) ? "已静音，点击恢复" : `邀请${def.label}发言`}
+                onClick={() =>
+                  setSpecified(
+                    specified.includes(seat.key)
+                      ? specified.filter((k) => k !== seat.key)
+                      : [...specified, seat.key],
+                  )
+                }
+                title={muted.includes(seat.key) ? "已静音，点击恢复" : `邀请${def.label}加入讨论`}
                 className="absolute z-10 -translate-x-1/2 -translate-y-1/2 focus:outline-none"
                 style={{ left: `${seat.x}%`, top: `${seat.y}%` }}
                 animate={{
@@ -291,7 +297,7 @@ export default function CompanionPage() {
                     </span>
                   )}
                   {muted.includes(seat.key) && <span className="text-[8px] text-muted/60">已静音</span>}
-                  {specified === seat.key && !muted.includes(seat.key) && (
+                  {specified.includes(seat.key) && !muted.includes(seat.key) && (
                     <span className="mt-0.5 rounded-full border border-[#89AACC]/50 px-1.5 text-[8px] text-[#89AACC]">
                       TA 来陪你
                     </span>
@@ -330,7 +336,7 @@ export default function CompanionPage() {
                   {recommendation.reason}
                 </p>
                 <div className="mt-3 flex justify-center">
-                  <GhostButton onClick={() => setSpecified(recommendation.role)}>
+                  <GhostButton onClick={() => setSpecified([recommendation.role])}>
                     和{IC_ROLES[recommendation.role].label}聊聊
                   </GhostButton>
                 </div>
@@ -448,7 +454,13 @@ export default function CompanionPage() {
                 value={icInput}
                 onChange={(e) => setIcInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") enqueueIC(icInput); }}
-                placeholder={specified ? `和${IC_ROLES[specified].label}聊聊…` : "说什么都行，圆桌会判断谁来回应…"}
+                placeholder={
+                  specified.length === 1
+                    ? `和${IC_ROLES[specified[0]].label}聊聊…`
+                    : specified.length > 1
+                      ? `和${specified.length}位成员一起聊…`
+                      : "说什么都行，圆桌会判断谁来回应…"
+                }
                 className="flex-1 rounded-xl border border-stroke bg-bg px-4 py-3 text-sm outline-none transition-colors placeholder:text-muted focus:border-[#89AACC]/50"
               />
               <button
@@ -486,7 +498,7 @@ export default function CompanionPage() {
             {ROLE_ORDER.map((key) => {
               const def = IC_ROLES[key];
               const isMuted = muted.includes(key);
-              const isSpec = specified === key;
+              const isSpec = specified.includes(key);
               return (
                 <div
                   key={key}
@@ -495,7 +507,14 @@ export default function CompanionPage() {
                   } ${isMuted ? "opacity-45" : ""}`}
                 >
                   <div className="flex items-center justify-between">
-                    <button onClick={() => setSpecified(isSpec ? null : key)} className="text-left">
+                    <button
+                      onClick={() =>
+                        setSpecified(
+                          isSpec ? specified.filter((k) => k !== key) : [...specified, key],
+                        )
+                      }
+                      className="text-left"
+                    >
                       <p className="text-xs text-text-primary">
                         {def.icon} {def.label}
                       </p>
@@ -504,7 +523,7 @@ export default function CompanionPage() {
                     <button
                       onClick={() => {
                         setMuted((m) => (isMuted ? m.filter((k) => k !== key) : [...m, key]));
-                        if (isSpec) setSpecified(null);
+                        if (isSpec) setSpecified(specified.filter((k) => k !== key));
                       }}
                       className="text-[9px] text-muted transition-colors hover:text-text-primary"
                     >
@@ -585,7 +604,7 @@ export default function CompanionPage() {
             </button>
           </div>
           <p className="mt-2 text-[10px] leading-relaxed text-muted/70">
-            指定了某位成员时，由 TA 单独回应；切回自动或全员模式即可恢复圆桌讨论。
+            可同时勾选多位成员——选中的会按顺序依次发言；全部取消勾选则恢复自动判断。
           </p>
         </Card>
       </div>

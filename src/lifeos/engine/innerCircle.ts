@@ -107,7 +107,7 @@ const NEED_WORDS: Array<[RegExp, keyof ICAnalysis["needs"]]> = [
   [/做点什么|行动|计划|开始|第一步/, "action"],
 ];
 
-function localAnalyze(text: string, specified: RoleKey | null): ICAnalysis {
+function localAnalyze(text: string, specified: RoleKey[]): ICAnalysis {
   const moods: Array<[RegExp, string, number]> = [
     [/焦虑|紧张|慌|压力|崩溃/, "anxiety", 0.8],
     [/累|疲惫|撑不住|倦/, "frustration", 0.7],
@@ -132,13 +132,14 @@ function localAnalyze(text: string, specified: RoleKey | null): ICAnalysis {
     needs.analysis *= 0.5;
   }
 
-  const primary = specified ?? (needs.analysis > 0.6 ? "mentor" : emotions.length ? "mother" : "friend");
+  const heuristic = needs.analysis > 0.6 ? "mentor" : emotions.length ? "mother" : "friend";
+  const primary = specified.length ? (specified.includes(heuristic as RoleKey) ? heuristic : specified[0]) : heuristic;
   return { emotions, needs, primary: primary as RoleKey, secondary: null, newFacts: [] };
 }
 
 async function remoteAnalyze(
   text: string,
-  specified: RoleKey | null,
+  specified: RoleKey[],
   muted: RoleKey[],
   profile: UserProfile,
 ): Promise<ICAnalysis> {
@@ -150,7 +151,7 @@ async function remoteAnalyze(
 规则：
 - 情绪 label 只能取：sadness/anxiety/anger/loneliness/frustration/shame/fear/excitement/confusion/calm，score 0-1
 - needs 四项：validation（被理解）/companionship（陪伴）/analysis（分析）/action（行动），0-1
-- 用户${specified ? `已指定由「${specified}」发言，primary 必须是它` : "未指定角色，由你根据情绪与需求判断 primary，必要时给 secondary"}
+- 用户${specified.length ? `已指定由【${specified.map((r) => r).join("、")}】发言，primary 必须是其中之一${specified.length > 1 ? "，secondary 若有也必须是其中之一" : "，secondary 为 null"}` : "未指定角色，由你根据情绪与需求判断 primary，必要时给 secondary"}
 ${muted.length ? `- 以下角色被用户静音，不可选：${muted.join("、")}` : ""}
 - newFacts：从消息中提取关于用户的持久事实（30 字内），没有就给空数组
 - 当消息出现「我总是 / 我从小就 / 我害怕 / 我不敢」等持久模式表达时，必须提取为 newFacts（kind 用 observed）
@@ -309,7 +310,7 @@ export async function orchestrator(
     profile: UserProfile;
     persona: Persona;
     memories: ICMemory[];
-    specified: RoleKey | null;
+    specified: RoleKey[];
     muted: RoleKey[];
     mode?: "auto" | "all"; // all = 全员一起讨论
   },
@@ -348,7 +349,7 @@ export async function orchestrator(
   // 角色评分：需求 + 情绪 + 用户指定（覆盖）；静音角色排除
   const score = (r: RoleKey): number => {
     if (ctx.muted.includes(r)) return -1;
-    if (ctx.specified === r) return 10;
+    if (ctx.specified.includes(r)) return 10 + (ctx.specified.length - ctx.specified.indexOf(r)) * 0.01;
     let s = 0.3;
     s += analysis.needs.validation * (r === "mother" || r === "child" ? 0.6 : 0.1);
     s += analysis.needs.companionship * (r === "friend" || r === "mother" ? 0.55 : 0.1);
@@ -362,9 +363,10 @@ export async function orchestrator(
     return s;
   };
   const ranked = ROLE_ORDER.filter((r) => !ctx.muted.includes(r)).sort((a, b) => score(b) - score(a));
-  const primary = analysis.primary;
-  // 用户指定角色时由 TA 单独回应，不触发副发言
-  const secondary = ctx.specified
+  const pool = ctx.specified.length ? ranked.filter((r) => ctx.specified.includes(r)) : ranked;
+  const primary = pool[0] ?? "friend";
+  // 用户指定角色时：由选中的成员依次发言，不触发自动副发言
+  const secondary = ctx.specified.length
     ? null
     : analysis.secondary && analysis.secondary !== primary && !ctx.muted.includes(analysis.secondary)
       ? analysis.secondary
@@ -383,8 +385,23 @@ export async function orchestrator(
   }
   messages.push({ roleKey: primary, text: primaryText });
 
+  // 指定多位成员：他们依次加入讨论
+  if (ctx.specified.length > 1) {
+    const others = ctx.specified.slice(1).filter((r) => r !== primary && !ctx.muted.includes(r));
+    const rest = await Promise.all(
+      others.map((r) =>
+        llm.isRemote
+          ? roleReply(r, userText, history, ctx.profile, ctx.persona, ctx.memories, analysis).catch(() =>
+              localRoleReply(r, userText, ctx.memories),
+            )
+          : Promise.resolve(localRoleReply(r, userText, ctx.memories)),
+      ),
+    );
+    others.forEach((r, i) => messages.push({ roleKey: r, text: rest[i] }));
+  }
+
   // 全员讨论模式：其余在场角色按各自视角依次发言（并行生成）
-  if (ctx.mode === "all" && !ctx.specified) {
+  if (ctx.mode === "all" && ctx.specified.length === 0) {
     const others = ROLE_ORDER.filter((r) => r !== primary && !ctx.muted.includes(r));
     const rest = await Promise.all(
       others.map((r) =>
