@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useOS } from "../store/OSContext";
-import { companionReply, detectMood } from "../engine/companion";
 import {
   IC_ROLES,
   ROLE_ORDER,
@@ -9,7 +8,7 @@ import {
   buildDecisionSpace,
   orchestrator,
 } from "../engine/innerCircle";
-import { COMPANION_MODES, type ChatMessage, type CompanionMode, type DecisionSpace, type ICMessage, type ICSession, type RoleKey } from "../types";
+import { type DecisionSpace, type ICMessage, type ICSession, type RoleKey } from "../types";
 
 // 自然语言指定角色：「我想和妈妈聊聊」「不想听建议，只想让朋友陪着」「让导师帮我分析」…
 const ROLE_INTENT: Array<[RegExp, RoleKey]> = [
@@ -27,7 +26,7 @@ function detectRoleIntent(text: string): RoleKey | null {
 import { Card, GhostButton, TypeOut } from "../components/ui";
 
 // ─── AI Inner Circle｜内心圆桌：多角色陪伴支持系统 ───
-// 圆桌场景 + 动态发言机制 + 角色关系记忆 + 用户控制权 + 快速聊天（旧模式保留）
+// 圆桌场景 + 动态发言机制 + 角色关系记忆 + 用户控制权 + 讨论模式（自动/全员）
 
 export default function CompanionPage() {
   const { state, persona, dispatch } = useOS();
@@ -42,19 +41,12 @@ export default function CompanionPage() {
   const [decPending, setDecPending] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // ── 快速聊天（旧四模式，保留入口） ──
-  const [quickChat, setQuickChat] = useState(false);
-  const [mode, setMode] = useState<CompanionMode>("friend");
-  const [input, setInput] = useState("");
-  const [pending, setPending] = useState(false);
-  const bottomRef2 = useRef<HTMLDivElement>(null);
+  // ── 讨论模式：auto = 圆桌自动选择发言者；all = 全员一起讨论 ──
+  const [mode, setMode] = useState<"auto" | "all">("auto");
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [session?.messages.length, icPending]);
-  useEffect(() => {
-    bottomRef2.current?.scrollIntoView({ behavior: "smooth" });
-  }, [state.messages.length, pending]);
 
   if (!state.profile || !persona) {
     return (
@@ -96,6 +88,7 @@ export default function CompanionPage() {
       memories: icMemories,
       specified: effectiveSpecified,
       muted,
+      mode,
     });
 
     const roleMessages: ICMessage[] = reply.messages.map((m, i) => ({
@@ -144,24 +137,6 @@ export default function CompanionPage() {
     const ds = await buildDecisionSpace(session.messages);
     setDecision(ds);
     setDecPending(false);
-  };
-
-  // ── 快速聊天（旧模式） ──
-  const sendQuick = async (text: string) => {
-    const trimmed = text.trim();
-    if (!trimmed || pending) return;
-    const userMsg: ChatMessage = { id: `u-${Date.now()}`, role: "user", text: trimmed, mode, at: Date.now() };
-    dispatch({ type: "addMessage", msg: userMsg });
-    setInput("");
-    setPending(true);
-    const mood = detectMood(trimmed);
-    if (mood) dispatch({ type: "addMood", mood: mood.label });
-    const reply = await companionReply(trimmed, mode, {
-      profile: state.profile, persona, dailyPlan: state.dailyPlan, decisions: state.decisions,
-      plans: state.plans, memories: state.memories, moods: state.moods, stats: state.stats,
-    });
-    dispatch({ type: "addMessage", msg: reply });
-    setPending(false);
   };
 
   // 座位位置（画布百分比）
@@ -451,7 +426,7 @@ export default function CompanionPage() {
         </div>
       </Card>
 
-      {/* ── 右栏：推荐 / 邀请成员 / 记忆 / 快速聊天 ── */}
+      {/* ── 右栏：推荐 / 邀请成员 / 记忆 / 讨论模式 ── */}
       <div className="w-full shrink-0 space-y-5 xl:w-72">
         {!session && (
           <motion.div
@@ -547,102 +522,37 @@ export default function CompanionPage() {
           )}
         </Card>
 
-        <GhostButton onClick={() => setQuickChat((q) => !q)} className="w-full">
-          {quickChat ? "返回内心圆桌" : "快速聊天（旧版单 AI）"}
-        </GhostButton>
+        <Card>
+          <p className="mb-1 text-sm text-text-primary">讨论模式</p>
+          <p className="mb-3 text-[11px] text-muted">{mode === "auto" ? "圆桌自动判断谁来发言" : "全员一起讨论"}</p>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => setMode("auto")}
+              className={`rounded-xl border px-3 py-2 text-[11px] transition-colors ${
+                mode === "auto"
+                  ? "border-[#89AACC]/50 bg-[rgba(137,170,204,0.08)] text-[#89AACC]"
+                  : "border-stroke text-muted hover:text-text-primary"
+              }`}
+            >
+              自动圆桌
+            </button>
+            <button
+              onClick={() => setMode("all")}
+              className={`rounded-xl border px-3 py-2 text-[11px] transition-colors ${
+                mode === "all"
+                  ? "border-[#89AACC]/50 bg-[rgba(137,170,204,0.08)] text-[#89AACC]"
+                  : "border-stroke text-muted hover:text-text-primary"
+              }`}
+            >
+              全员一起讨论
+            </button>
+          </div>
+          <p className="mt-2 text-[10px] leading-relaxed text-muted/70">
+            指定了某位成员时，由 TA 单独回应；切回自动或全员模式即可恢复圆桌讨论。
+          </p>
+        </Card>
       </div>
 
-      {/* 快速聊天浮层 */}
-      <AnimatePresence>
-        {quickChat && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-6 backdrop-blur-sm"
-            onClick={() => setQuickChat(false)}
-          >
-            <Card className="flex h-[80vh] w-full max-w-2xl flex-col p-0" >
-              <div className="flex items-center justify-between border-b border-stroke px-6 py-4">
-                <div>
-                  <p className="text-sm text-text-primary">快速聊天</p>
-                  <p className="text-[10px] text-muted">单 AI · 四种模式 · 旧版入口</p>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  {(Object.keys(COMPANION_MODES) as CompanionMode[]).map((m) => (
-                    <button
-                      key={m}
-                      onClick={() => setMode(m)}
-                      className={`rounded-full px-2.5 py-1 text-[10px] transition-colors ${
-                        mode === m ? "bg-[rgba(137,170,204,0.15)] text-[#89AACC]" : "text-muted hover:text-text-primary"
-                      }`}
-                    >
-                      {COMPANION_MODES[m].icon} {COMPANION_MODES[m].label}
-                    </button>
-                  ))}
-                  <button
-                    onClick={() => setQuickChat(false)}
-                    className="ml-2 rounded-full border border-stroke px-2 py-0.5 text-xs text-muted hover:text-text-primary"
-                  >
-                    ✕
-                  </button>
-                </div>
-              </div>
-              <div className="flex-1 space-y-4 overflow-y-auto px-6 py-5">
-                {state.messages.length === 0 && (
-                  <p className="py-10 text-center text-sm text-muted">和单 AI 快速聊两句——深度的谈话请回到圆桌。</p>
-                )}
-                {state.messages.map((msg) => (
-                  <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                    <div
-                      className={`max-w-[85%] rounded-3xl px-5 py-3 text-sm leading-relaxed ${
-                        msg.role === "user" ? "rounded-br-md bg-text-primary text-bg" : "rounded-bl-md border border-stroke bg-bg/60 text-text-primary/90"
-                      }`}
-                    >
-                      {msg.role === "ai" ? <TypeOut text={msg.text} /> : msg.text}
-                    </div>
-                  </div>
-                ))}
-                {pending && (
-                  <div className="flex justify-start">
-                    <div className="rounded-3xl rounded-bl-md border border-stroke bg-bg/60 px-5 py-3">
-                      <div className="flex gap-1.5">
-                        {[0, 1, 2].map((i) => (
-                          <motion.span
-                            key={i}
-                            className="h-1.5 w-1.5 rounded-full bg-text-primary/70"
-                            animate={{ opacity: [0.2, 1, 0.2] }}
-                            transition={{ duration: 0.9, repeat: Infinity, delay: i * 0.15 }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-                <div ref={bottomRef2} />
-              </div>
-              <div className="border-t border-stroke px-6 py-4">
-                <div className="flex gap-3">
-                  <input
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && void sendQuick(input)}
-                    placeholder="快速聊两句…"
-                    className="flex-1 rounded-xl border border-stroke bg-bg px-4 py-3 text-sm outline-none transition-colors placeholder:text-muted focus:border-[#89AACC]/50"
-                  />
-                  <button
-                    onClick={() => void sendQuick(input)}
-                    disabled={!input.trim() || pending}
-                    className="accent-gradient rounded-xl px-5 text-sm font-medium text-bg transition-opacity disabled:opacity-40"
-                  >
-                    发送
-                  </button>
-                </div>
-              </div>
-            </Card>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

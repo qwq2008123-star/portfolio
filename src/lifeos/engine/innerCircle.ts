@@ -311,6 +311,7 @@ export async function orchestrator(
     memories: ICMemory[];
     specified: RoleKey | null;
     muted: RoleKey[];
+    mode?: "auto" | "all"; // all = 全员一起讨论
   },
 ): Promise<ICReply> {
   if (detectCrisis(userText)) {
@@ -362,8 +363,10 @@ export async function orchestrator(
   };
   const ranked = ROLE_ORDER.filter((r) => !ctx.muted.includes(r)).sort((a, b) => score(b) - score(a));
   const primary = analysis.primary;
-  const secondary =
-    analysis.secondary && analysis.secondary !== primary && !ctx.muted.includes(analysis.secondary)
+  // 用户指定角色时由 TA 单独回应，不触发副发言
+  const secondary = ctx.specified
+    ? null
+    : analysis.secondary && analysis.secondary !== primary && !ctx.muted.includes(analysis.secondary)
       ? analysis.secondary
       : score(ranked[1]) - score(primary) < 0.12 ? null : ranked[1];
 
@@ -379,6 +382,21 @@ export async function orchestrator(
     primaryText = localRoleReply(primary, userText, ctx.memories);
   }
   messages.push({ roleKey: primary, text: primaryText });
+
+  // 全员讨论模式：其余在场角色按各自视角依次发言（并行生成）
+  if (ctx.mode === "all" && !ctx.specified) {
+    const others = ROLE_ORDER.filter((r) => r !== primary && !ctx.muted.includes(r));
+    const rest = await Promise.all(
+      others.map((r) =>
+        llm.isRemote
+          ? roleReply(r, userText, history, ctx.profile, ctx.persona, ctx.memories, analysis).catch(() =>
+              localRoleReply(r, userText, ctx.memories),
+            )
+          : Promise.resolve(localRoleReply(r, userText, ctx.memories)),
+      ),
+    );
+    others.forEach((r, i) => messages.push({ roleKey: r, text: rest[i] }));
+  }
 
   if (secondary) {
     try {
