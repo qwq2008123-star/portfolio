@@ -1,37 +1,54 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { AnimatePresence, motion } from "framer-motion";
 
-interface Item {
-  src: string;
-  alt: string;
+// ─── 视觉语言：自绘渐变面板（深空 / 霓虹 / 暖光 / 星尘 / 呼吸 / 极光） ───
+
+interface Visual {
+  title: string;
+  en: string;
+  background: string;
 }
 
-const ITEMS: Item[] = [
+const VISUALS: Visual[] = [
   {
-    src: "https://images.unsplash.com/photo-1518837695005-2083093ee35b?q=80&w=900&h=900&auto=format&fit=crop",
-    alt: "Ocean wave study",
+    title: "深空",
+    en: "Deep Space",
+    background: "radial-gradient(circle at 30% 30%, #312e81 0%, #0b1020 68%)",
   },
   {
-    src: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?q=80&w=900&h=900&auto=format&fit=crop",
-    alt: "Foggy ridge",
+    title: "霓虹",
+    en: "Neon",
+    background:
+      "linear-gradient(135deg, rgba(0,212,255,0.35) 0%, rgba(255,45,149,0.35) 100%), #0b1020",
   },
   {
-    src: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=900&h=900&auto=format&fit=crop",
-    alt: "Forest road",
+    title: "暖光",
+    en: "Warmth",
+    background:
+      "radial-gradient(circle at 50% 40%, rgba(232,200,106,0.45) 0%, #171208 72%)",
   },
   {
-    src: "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?q=80&w=900&h=900&auto=format&fit=crop",
-    alt: "Golden Gate at dusk",
+    title: "星尘",
+    en: "Stardust",
+    background:
+      "radial-gradient(circle at 70% 22%, rgba(255,255,255,0.55) 0%, transparent 2.5%)," +
+      "radial-gradient(circle at 28% 58%, rgba(255,255,255,0.4) 0%, transparent 2%)," +
+      "radial-gradient(circle at 55% 38%, rgba(137,170,204,0.45) 0%, transparent 2%)," +
+      "radial-gradient(circle at 42% 78%, rgba(255,255,255,0.3) 0%, transparent 2%)," +
+      "#070609",
   },
   {
-    src: "https://images.unsplash.com/photo-1470813740244-df37b8c1edcb?q=80&w=900&h=900&auto=format&fit=crop",
-    alt: "Starry night sky",
+    title: "呼吸",
+    en: "Glow",
+    background:
+      "radial-gradient(circle at 50% 50%, rgba(137,170,204,0.35) 0%, #0a0f1e 66%)",
   },
   {
-    src: "https://images.unsplash.com/photo-1444703686981-a3abbc4d4fe3?q=80&w=900&h=900&auto=format&fit=crop",
-    alt: "Milky way",
+    title: "极光",
+    en: "Aurora",
+    background:
+      "linear-gradient(160deg, rgba(52,211,153,0.3) 0%, rgba(124,58,237,0.35) 58%, #0b1020 100%)",
   },
 ];
 
@@ -40,7 +57,6 @@ export default function Explorations() {
   const contentRef = useRef<HTMLDivElement>(null);
   const col1Ref = useRef<HTMLDivElement>(null);
   const col2Ref = useRef<HTMLDivElement>(null);
-  const [lightbox, setLightbox] = useState<Item | null>(null);
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
@@ -95,21 +111,21 @@ export default function Explorations() {
     return () => ctx.revert();
   }, []);
 
-  useEffect(() => {
-    if (!lightbox) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setLightbox(null);
-    };
-    window.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
-  }, [lightbox]);
+  const firstColumn = VISUALS.slice(0, 3);
+  const secondColumn = VISUALS.slice(3);
 
-  const firstColumn = ITEMS.slice(0, 3);
-  const secondColumn = ITEMS.slice(3);
+  const tile = (v: Visual, i: number) => (
+    <div
+      key={v.en}
+      className="flex aspect-square w-full max-w-[320px] items-center justify-center overflow-hidden rounded-[28px] border border-white/10"
+      style={{ background: v.background, transform: `rotate(${i % 2 === 0 ? "-2.5deg" : "2deg"})` }}
+    >
+      <div className="text-center">
+        <p className="text-[10px] uppercase tracking-[0.35em] text-white/50">{v.en}</p>
+        <p className="mt-2 font-display text-2xl italic text-white/85">{v.title}</p>
+      </div>
+    </div>
+  );
 
   return (
     <section
@@ -134,14 +150,14 @@ export default function Explorations() {
         <p className="mt-4 max-w-md text-sm text-muted md:text-base">
           深空、霓虹与呼吸感的光——系统的视觉氛围沉淀。
         </p>
-        <a href="#" onClick={(e) => e.preventDefault()} className="mt-8 inline-flex">
+        <a href="/life-os" className="mt-8 inline-flex">
           <span className="group relative rounded-full">
             <span
               aria-hidden="true"
               className="accent-gradient pointer-events-none absolute inset-[-2px] rounded-full opacity-0 transition-opacity duration-300 group-hover:opacity-100"
             />
             <span className="relative inline-flex items-center gap-2 rounded-full border border-stroke bg-bg px-6 py-3 text-sm text-muted transition-colors duration-300 group-hover:border-transparent group-hover:text-text-primary">
-              Dribbble
+              进入系统
               <svg
                 width="14"
                 height="14"
@@ -160,99 +176,23 @@ export default function Explorations() {
         </a>
       </div>
 
-      {/* Layer 2 — parallax image columns */}
+      {/* Layer 2 — parallax visual columns */}
       <div className="pointer-events-none absolute inset-0 z-20">
         <div className="mx-auto grid h-full max-w-[1400px] grid-cols-2 gap-12 px-6 md:gap-40">
           <div
             ref={col1Ref}
             className="flex flex-col items-start gap-12 pt-[12vh] md:gap-40"
           >
-            {firstColumn.map((item, i) => (
-              <button
-                key={item.src}
-                type="button"
-                aria-label={`Open ${item.alt}`}
-                onClick={() => setLightbox(item)}
-                className="group pointer-events-auto block aspect-square w-full max-w-[320px] cursor-pointer overflow-hidden rounded-3xl border border-stroke"
-                style={{ transform: `rotate(${i % 2 === 0 ? "-3deg" : "2.5deg"})` }}
-              >
-                <img
-                  src={item.src}
-                  alt={item.alt}
-                  loading="lazy"
-                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-              </button>
-            ))}
+            {firstColumn.map((v, i) => tile(v, i))}
           </div>
           <div
             ref={col2Ref}
             className="flex flex-col items-start gap-12 pt-[45vh] md:gap-40"
           >
-            {secondColumn.map((item, i) => (
-              <button
-                key={item.src}
-                type="button"
-                aria-label={`Open ${item.alt}`}
-                onClick={() => setLightbox(item)}
-                className="group pointer-events-auto block aspect-square w-full max-w-[320px] cursor-pointer overflow-hidden rounded-3xl border border-stroke"
-                style={{ transform: `rotate(${i % 2 === 0 ? "-3deg" : "2.5deg"})` }}
-              >
-                <img
-                  src={item.src}
-                  alt={item.alt}
-                  loading="lazy"
-                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-              </button>
-            ))}
+            {secondColumn.map((v, i) => tile(v, i + 1))}
           </div>
         </div>
       </div>
-
-      {/* Lightbox */}
-      <AnimatePresence>
-        {lightbox && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/90 p-6 backdrop-blur-sm"
-            onClick={() => setLightbox(null)}
-          >
-            <motion.img
-              src={lightbox.src.replace("w=900&h=900", "w=1600&h=1600")}
-              alt={lightbox.alt}
-              initial={{ scale: 0.92, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
-              className="max-h-[85vh] max-w-[90vw] rounded-2xl object-contain shadow-2xl"
-            />
-            <button
-              type="button"
-              aria-label="Close lightbox"
-              onClick={() => setLightbox(null)}
-              className="absolute right-6 top-6 text-white/70 transition-colors hover:text-white"
-            >
-              <svg
-                width="28"
-                height="28"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M18 6L6 18M6 6l12 12" />
-              </svg>
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </section>
   );
 }
