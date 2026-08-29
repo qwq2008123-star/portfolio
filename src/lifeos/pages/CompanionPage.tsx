@@ -255,25 +255,15 @@ export default function CompanionPage() {
                 "#070609",
             }}
           />
-          {/* 圆桌：发言时轻微转向发言者（镜头感） */}
-          <div className="absolute left-1/2 top-[42%] h-[46%] w-[62%] -translate-x-1/2 -translate-y-1/2">
-          <motion.div
-            className="h-full w-full rounded-[50%] border border-[#E8C86A]/25"
+          {/* 圆桌（静止居中；发言时用灯光聚焦表达） */}
+          <div
+            className="absolute left-1/2 top-[42%] h-[46%] w-[62%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-[#E8C86A]/25"
             style={{
               background:
                 "radial-gradient(ellipse at 50% 40%, rgba(232,200,106,0.10), rgba(90,70,40,0.08) 60%, transparent 75%)",
               boxShadow: "inset 0 0 60px rgba(232,200,106,0.08), 0 0 50px rgba(232,200,106,0.05)",
             }}
-            animate={{ x: (() => {
-              if (!speakingRole || speakingRole === "user") return 0;
-              const seatIdx = SEATS.findIndex((s2) => s2.key === speakingRole);
-              if (seatIdx >= 0) return (SEATS[seatIdx].x - 50) * 3;
-              const guestIdx = guestAgents.findIndex((g) => g.id === speakingRole);
-              return guestIdx >= 0 ? (guestAgents[guestIdx].id === speakingRole && guestIdx === 0 ? -30 : 30) : 0;
-            })() }}
-            transition={{ duration: 1.2, ease: "easeInOut" }}
           />
-          </div>
           {/* 灯光聚焦（发言者以外压暗） */}
           <AnimatePresence>
             {(speakingRole === "user" || speakingRole) && (() => {
@@ -300,6 +290,7 @@ export default function CompanionPage() {
           {SEATS.map((seat) => {
             const def = IC_ROLES[seat.key];
             const status = roleStatus(seat.key);
+            const isSelected = specified.includes(seat.key);
             const dim = status === "silent" || muted.includes(seat.key);
             return (
               <motion.button
@@ -330,8 +321,16 @@ export default function CompanionPage() {
                   transition={{ duration: 0.5 }}
                   className="flex flex-col items-center"
                 >
+                  <div
+                    className="rounded-full p-[2px] transition-all duration-300"
+                    style={{
+                      background: isSelected || status === "speaking" ? "linear-gradient(135deg, #E8C86A, #89AACC)" : "transparent",
+                      boxShadow: isSelected || status === "speaking" ? "0 0 16px rgba(232,200,106,0.5)" : "none",
+                    }}
+                  >
                   <div className={status === "speaking" ? "pixel-speaking" : "pixel-idle"}>
                     <PixelPerson variant={seat.key} size={58} speaking={status === "speaking"} />
+                  </div>
                   </div>
                   <p className="mt-1 whitespace-nowrap text-[10px]" style={{ color: status === "speaking" ? def.hue : undefined }}>
                     {def.label}
@@ -525,6 +524,17 @@ export default function CompanionPage() {
 
           {/* 输入区 */}
           <div className="border-t border-stroke px-6 py-4">
+            <div className="mb-3 flex justify-end">
+              <button
+                onClick={() => {
+                  setSession(null);
+                  dispatch({ type: "icUpdate", sessions: [] });
+                }}
+                className="text-[10px] text-muted transition-colors hover:text-text-primary"
+              >
+                清空对话记录
+              </button>
+            </div>
             {session && session.messages.length >= 6 && !decision && (
               <div className="mb-3 flex justify-center">
                 <button
