@@ -546,6 +546,16 @@ export default function CompanionPage() {
                 </button>
               </div>
             )}
+            {specified.length > 0 && (
+              <div className="mb-2 flex items-center justify-between text-[10px]">
+                <span className="text-muted">
+                  当前对话：{specified.map((k) => IC_ROLES[k as RoleKey]?.label ?? k).join("、")}
+                </span>
+                <button onClick={() => setSpecified([])} className="text-[#89AACC] hover:underline">
+                  回到全员讨论
+                </button>
+              </div>
+            )}
             <div className="flex gap-3">
               <input
                 value={icInput}
@@ -563,7 +573,7 @@ export default function CompanionPage() {
               <button
                 onClick={() => enqueueIC(icInput)}
                 disabled={!icInput.trim()}
-                className="accent-gradient rounded-xl px-5 text-sm font-medium text-bg transition-opacity disabled:opacity-40"
+                className={`accent-gradient rounded-xl px-5 text-sm font-medium text-bg transition-opacity ${icInput.trim() ? "" : "opacity-60"}`}
               >
                 发送
               </button>
