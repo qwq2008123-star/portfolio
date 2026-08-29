@@ -58,6 +58,16 @@ export default function CompanionPage() {
   // ── 讨论模式：auto = 圆桌自动选择发言者；all = 全员一起讨论 ──
   const [mode, setMode] = useState<"auto" | "all">("auto");
 
+  // 挂载时恢复上次圆桌会话（刷新不丢人物与历史）
+  useEffect(() => {
+    const last = state.innerCircle.sessions[0];
+    if (last && last.messages.length > 0) {
+      sessionRef.current = last;
+      setSession(last);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     specifiedRef.current = specified;
     mutedRef.current = muted;
