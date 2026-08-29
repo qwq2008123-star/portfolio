@@ -125,10 +125,17 @@ export interface MatchCandidate {
   name: string;
   role: string;
   archetype: string;
+  mbti: string;
   type: "学习伙伴" | "创业伙伴" | "行业导师" | "兴趣朋友";
   matchScore: number;
   reasons: string[];
   connected: boolean;
+  /** 社区固定成员：在社区中帮助过的人数 */
+  helpedCount?: number;
+  /** 社区固定成员：定制的可提供服务 */
+  customServices?: Array<{ name: string; helps: string[]; price?: number }>;
+  /** 手绘头像变体（社区固定成员专用） */
+  avatarVariant?: string;
 }
 
 export interface OSStats {
@@ -150,9 +157,79 @@ export interface OSState {
   moods: { at: number; mood: string }[];
   rpg: RPGState | null;
   memories: MemoryEvent[];
+  integrations: IntegrationNote[];
+  innerCircle: {
+    memories: ICMemory[];
+    sessions: ICSession[];
+  };
   stats: OSStats;
   lastVisit: number;
   loginDays: string[];
+}
+
+// ─── Inner Circle｜内心圆桌 ───
+
+export type RoleKey = "mother" | "mentor" | "friend" | "child" | "future";
+
+export type ICRoleStatus =
+  | "speaking"
+  | "listening"
+  | "thinking"
+  | "silent"
+  | "recommended";
+
+export interface EmotionScore {
+  label: string; // sadness / anxiety / anger / loneliness / frustration / shame / fear / excitement / confusion / calm
+  score: number; // 0-1
+}
+
+export type ICMemoryKind = "explicit" | "observed" | "confirmed";
+
+export interface ICMemory {
+  id: string;
+  content: string; // 30 字内的记忆条目
+  kind: ICMemoryKind; // explicit=用户直说 observed=AI观察 confirmed=用户已确认
+  roles: RoleKey[]; // 哪些角色知道这件事
+  confidence: number; // 0-1，observed 起点低，confirmed=1
+  source: string; // 来源消息摘要
+  at: number;
+  confirmedAt?: number;
+}
+
+export interface ICMessage {
+  id: string;
+  roleKey: RoleKey | "user";
+  text: string;
+  at: number;
+  emotions?: EmotionScore[];
+  need?: string;
+}
+
+export interface ICSession {
+  id: string;
+  startedAt: number;
+  messages: ICMessage[];
+  primaryRole: RoleKey;
+}
+
+export interface DecisionSpace {
+  want: string; // 我真正想要什么
+  fear: string; // 我害怕什么
+  facts: string[]; // 已知事实
+  risks: string[]; // 风险
+  options: string[]; // 可选方案
+  next: string[]; // 下一步行动
+}
+
+/** 整合之旅：一次阴影画像 → 化身对话 → 整合笔记 */
+export interface IntegrationNote {
+  id: string;
+  mbti: string;
+  avatar: string;
+  portrait: string;
+  exchanges: Array<{ user: string; avatar: string }>;
+  closing: string;
+  createdAt: number;
 }
 
 export const TRAIT_LABELS = [

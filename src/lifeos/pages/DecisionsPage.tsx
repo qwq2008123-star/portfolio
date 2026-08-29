@@ -1,26 +1,19 @@
 import { useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { useOS } from "../store/OSContext";
-import { buildDecisionReport } from "../engine/decision";
 import { dailyRoutineItems, habitAdvice } from "../engine/dailyAdvisor";
 import { getLLM } from "../engine/llm";
-import { generatePlan } from "../engine/planner";
 import { DEFAULT_DAILY_PLAN } from "../data/dailyPlan";
-import type { ChatMessage, DecisionReport } from "../types";
+import type { ChatMessage } from "../types";
 import {
   Card,
   EmptyState,
   GhostButton,
   GradientButton,
-  ScoreRing,
   SectionTitle,
-  Thinking,
 } from "../components/ui";
 
-// ─── AI 人生决策助手：问题 → 调取人格 + 历史 + 模拟 → 决策报告 ───
-
-const EXAMPLES = ["是否创业？", "是否考研？", "是否换工作？", "是否换城市？", "是否坚持这个项目？"];
+// ─── AI 决策助手 · 日常习惯对话：按「日常计划（弹性版）」陪用户动态调整 ───
 
 // 日常习惯对话助手的快捷入口：状态打卡 + 常见选择 + 日总结
 const DAILY_PROMPTS = ["我今天想喝哪一家的咖啡？", "今天中午吃什么？", "现在适合去运动吗？"];
@@ -33,11 +26,6 @@ const SUMMARY_PROMPT = "到 AI 日总结时间了，我们聊聊今天吧";
 
 export default function DecisionsPage() {
   const { state, persona, dispatch } = useOS();
-  const navigate = useNavigate();
-  const [question, setQuestion] = useState("");
-  const [phase, setPhase] = useState<"input" | "thinking" | "done">("input");
-  const [report, setReport] = useState<DecisionReport | null>(null);
-  const [addedToPlan, setAddedToPlan] = useState(false);
 
   // ─── 日常习惯对话助手（本地会话，不影响情绪陪伴的消息流） ───
   const [chat, setChat] = useState<ChatMessage[]>([]);
@@ -93,43 +81,12 @@ export default function DecisionsPage() {
     setPlanSaved(true);
   };
 
-  const run = (q: string) => {
-    if (!q.trim() || !state.profile || !persona) return;
-    setQuestion(q);
-    setPhase("thinking");
-    setReport(null);
-    setAddedToPlan(false);
-    setTimeout(() => {
-      const result = buildDecisionReport(q, state.profile!, persona, state.stats);
-      setReport(result);
-      setPhase("done");
-      dispatch({ type: "addDecision", report: result });
-      dispatch({ type: "addXp", amount: 25, reason: "完成一次决策分析" });
-    }, 2200);
-  };
-
-  const addToPlan = () => {
-    if (!report || !state.profile) return;
-    const plan = generatePlan(`${report.category}：${report.actions[0]}`, state.profile);
-    const planWithActions = {
-      ...plan,
-      goal: `${report.question.slice(0, 16)} — 90 天行动`,
-      tasks: plan.tasks.map((t, i) =>
-        i < report.actions.length
-          ? { ...t, title: report.actions[i], cadence: "weekly" as const }
-          : t,
-      ),
-    };
-    dispatch({ type: "addPlan", plan: planWithActions });
-    setAddedToPlan(true);
-  };
-
   if (!state.profile || !persona) {
     return (
       <EmptyState
         icon="⚖"
         title="需要先建立人格档案"
-        sub="决策助手需要调用你的 AI 人格档案与历史行为数据。"
+        sub="日常习惯助手需要调用你的 AI 人格档案与日常计划数据。"
       />
     );
   }
@@ -140,10 +97,10 @@ export default function DecisionsPage() {
         eyebrow="Decision Assistant"
         title={
           <>
-            破解你的<em className="font-display italic"> 人生选择 </em>
+            过好你的<em className="font-display italic"> 每一天 </em>
           </>
         }
-        sub="AI 将调取你的人格档案、历史行为与未来模拟，生成结构化决策报告。"
+        sub="AI 按你的「日常计划（弹性版）」，陪你动态调整每天的选择，不搞死板时间表。"
       />
 
       {/* ─── 日常习惯对话助手：聊日常小选择，AI 按你的「日常计划（弹性版）」分析 ─── */}
@@ -160,7 +117,7 @@ export default function DecisionsPage() {
               </span>
             ) : (
               <span className="rounded-full border border-stroke px-2.5 py-1 text-[10px] text-muted">
-                还没有日常数据，去「生活管理」写下每日任务
+                还没有日常数据，点「📋 我的日常」写下每日计划
               </span>
             )}
             <span
@@ -339,136 +296,6 @@ export default function DecisionsPage() {
           </div>
         </div>
       </Card>
-
-      <Card>
-        <textarea
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          placeholder="输入困扰你的决策，例如：「是否创业？」"
-          className="min-h-20 w-full resize-none rounded-xl border border-stroke bg-bg px-4 py-3 text-sm outline-none transition-colors placeholder:text-muted focus:border-[#89AACC]/50"
-        />
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap gap-2">
-            {EXAMPLES.map((e) => (
-              <GhostButton key={e} onClick={() => run(e)} active={question === e}>
-                {e}
-              </GhostButton>
-            ))}
-          </div>
-          <GradientButton onClick={() => run(question)} disabled={phase === "thinking" || !question.trim()}>
-            生成决策报告
-          </GradientButton>
-        </div>
-      </Card>
-
-      {/* 历史决策 */}
-      {state.decisions.length > 0 && phase === "input" && (
-        <Card>
-          <p className="mb-4 text-xs uppercase tracking-[0.25em] text-muted">历史决策</p>
-          <div className="space-y-3">
-            {state.decisions.slice(0, 5).map((d) => (
-              <button
-                key={d.id}
-                onClick={() => run(d.question)}
-                className="flex w-full items-center justify-between rounded-2xl border border-stroke bg-bg/40 px-4 py-3 text-left transition-colors hover:border-[#89AACC]/40"
-              >
-                <span className="truncate text-sm text-muted">{d.question}</span>
-                <span className="ml-4 shrink-0 font-display text-sm italic text-[#89AACC]">
-                  {d.matchScore}%
-                </span>
-              </button>
-            ))}
-          </div>
-        </Card>
-      )}
-
-      <AnimatePresence mode="wait">
-        {phase === "thinking" && (
-          <motion.div key="thinking" exit={{ opacity: 0 }}>
-            <Card>
-              <Thinking text="正在调取人格档案与历史行为" />
-            </Card>
-          </motion.div>
-        )}
-
-        {phase === "done" && report && (
-          <motion.div
-            key={report.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-6"
-          >
-            <Card glow>
-              <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
-                <div className="flex flex-col items-center gap-2">
-                  <ScoreRing value={report.matchScore} size={110} label="匹配度" />
-                  <span className="rounded-full border border-stroke px-3 py-1 text-[10px] uppercase tracking-widest text-muted">
-                    {report.category}
-                  </span>
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-display text-2xl italic">「{report.question}」</h3>
-                  <p className="mt-3 text-sm leading-relaxed text-text-primary/90">{report.analysis}</p>
-                </div>
-              </div>
-
-              <div className="mt-6 grid gap-6 sm:grid-cols-2">
-                <div>
-                  <p className="mb-2 text-xs uppercase tracking-[0.25em] text-[#89AACC]">你的优势</p>
-                  <ul className="space-y-1.5">
-                    {report.strengths.map((s) => (
-                      <li key={s} className="text-sm text-muted">✦ {s}</li>
-                    ))}
-                  </ul>
-                </div>
-                <div>
-                  <p className="mb-2 text-xs uppercase tracking-[0.25em] text-amber-400/80">需要警惕</p>
-                  <ul className="space-y-1.5">
-                    {report.risks.map((r) => (
-                      <li key={r} className="text-sm text-muted">⚠ {r}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-
-              <div className="mt-6 rounded-2xl border border-[#89AACC]/30 bg-[rgba(137,170,204,0.06)] p-5">
-                <p className="text-xs uppercase tracking-[0.25em] text-[#89AACC]">AI 推荐</p>
-                <p className="mt-2 text-sm leading-relaxed text-text-primary">{report.recommendation}</p>
-                <p className="mt-4 text-xs uppercase tracking-[0.25em] text-muted">未来 90 天行动</p>
-                <ol className="mt-2 space-y-1.5">
-                  {report.actions.map((a, i) => (
-                    <li key={a} className="text-sm text-muted">
-                      <span className="mr-2 font-display italic text-[#89AACC]">{i + 1}.</span>
-                      {a}
-                    </li>
-                  ))}
-                </ol>
-              </div>
-
-              <div className="mt-6">
-                <p className="mb-2 text-xs uppercase tracking-[0.25em] text-muted">备选方案</p>
-                <ul className="space-y-1.5">
-                  {report.alternatives.map((a) => (
-                    <li key={a} className="text-sm text-muted">→ {a}</li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="mt-8 flex flex-wrap items-center gap-3">
-                <GradientButton onClick={addToPlan} disabled={addedToPlan}>
-                  {addedToPlan ? "✓ 已加入行动计划" : "把行动建议加入生活管理"}
-                </GradientButton>
-                <button
-                  onClick={() => navigate("/life-os/simulator")}
-                  className="rounded-full border border-stroke px-5 py-3 text-sm text-muted transition-colors hover:text-text-primary"
-                >
-                  去模拟器看未来路线
-                </button>
-              </div>
-            </Card>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

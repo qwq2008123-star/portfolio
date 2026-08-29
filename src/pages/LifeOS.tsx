@@ -8,9 +8,7 @@ import Dashboard from "../lifeos/pages/Dashboard";
 import ProfilePage from "../lifeos/pages/ProfilePage";
 import SimulatorPage from "../lifeos/pages/SimulatorPage";
 import DecisionsPage from "../lifeos/pages/DecisionsPage";
-import LifePage from "../lifeos/pages/LifePage";
 import CompanionPage from "../lifeos/pages/CompanionPage";
-import RPGPage from "../lifeos/pages/RPGPage";
 import NetworkPage from "../lifeos/pages/NetworkPage";
 
 // ─── /life-os 路由中枢：认证门卫 + 应用壳 + 模块路由 ───
@@ -57,9 +55,7 @@ export default function LifeOS() {
           <Route path="profile" element={<ProfilePage />} />
           <Route path="simulator" element={<SimulatorPage />} />
           <Route path="decisions" element={<DecisionsPage />} />
-          <Route path="life" element={<LifePage />} />
           <Route path="companion" element={<CompanionPage />} />
-          <Route path="rpg" element={<RPGPage />} />
           <Route path="network" element={<NetworkPage />} />
           <Route path="*" element={<Navigate to="/life-os" replace />} />
         </Route>

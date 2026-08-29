@@ -15,14 +15,14 @@
 export interface LLMAdapter {
   readonly name: string;
   readonly isRemote: boolean;
-  complete(system: string, user: string): Promise<string>;
+  complete(system: string, user: string, timeoutMs?: number, model?: string): Promise<string>;
 }
 
 class LocalAdapter implements LLMAdapter {
   readonly name = "LifeOS-Local-Engine";
   readonly isRemote = false;
 
-  async complete(_system: string, _user: string): Promise<string> {
+  async complete(_system: string, _user: string, _timeoutMs?: number, _model?: string): Promise<string> {
     // 本地引擎不生成自由文本；各模块使用确定性模板逻辑
     return "";
   }
@@ -43,10 +43,10 @@ class OpenAICompatibleAdapter implements LLMAdapter {
     this.name = `remote:${model}`;
   }
 
-  async complete(system: string, user: string): Promise<string> {
-    // 30s 超时：防止请求挂起导致界面"永远思考中"，超时后回退本地引擎
+  async complete(system: string, user: string, timeoutMs = 30_000, model?: string): Promise<string> {
+    // 默认 30s 超时：防止请求挂起导致界面"永远思考中"，超时后回退本地引擎
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 30_000);
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
     try {
       const res = await fetch(`${this.baseUrl}/chat/completions`, {
         method: "POST",
@@ -57,7 +57,7 @@ class OpenAICompatibleAdapter implements LLMAdapter {
           ...(this.apiKey ? { Authorization: `Bearer ${this.apiKey}` } : {}),
         },
         body: JSON.stringify({
-          model: this.model,
+          model: model ?? this.model,
           messages: [
             { role: "system", content: system },
             { role: "user", content: user },

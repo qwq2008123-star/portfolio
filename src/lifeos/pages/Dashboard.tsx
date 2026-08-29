@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useOS, xpForLevel, LEVEL_TITLES } from "../store/OSContext";
-import { Card, Chip, ProgressBar, ScoreRing } from "../components/ui";
+import { Card, Chip, ProgressBar } from "../components/ui";
 
 // ─── 总览仪表盘：人格摘要 + 今日任务 + 快速入口 + 成长时间线 ───
 
@@ -9,7 +9,6 @@ const QUICK_ACTIONS = [
   { to: "/life-os/simulator", icon: "∿", title: "未来模拟器", desc: "推演不同选择的 3/5/10 年" },
   { to: "/life-os/decisions", icon: "⚖", title: "决策助手", desc: "用结构化分析破解纠结" },
   { to: "/life-os/companion", icon: "☾", title: "情绪陪伴", desc: "四种模式的长期伙伴" },
-  { to: "/life-os/rpg", icon: "✦", title: "成长 RPG", desc: "把目标变成升级路线" },
 ];
 
 export default function Dashboard() {
@@ -22,17 +21,13 @@ export default function Dashboard() {
   const nextBase = xpForLevel(level + 1);
   const xpProgress = level >= 5 ? 100 : ((xp - levelBase) / Math.max(nextBase - levelBase, 1)) * 100;
 
-  const todayTasks = state.plans
-    .flatMap((p) => p.tasks)
-    .filter((t) => t.cadence === "daily");
-  const doneToday = todayTasks.filter((t) => t.done).length;
   const recentMemories = [...state.memories].sort((a, b) => b.at - a.at).slice(0, 5);
 
   return (
     <div className="space-y-6">
       {/* 问候 + 人格摘要 */}
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card className="md:col-span-2" glow>
+      <div className="grid gap-6 md:grid-cols-1">
+        <Card glow>
           <p className="text-xs uppercase tracking-[0.3em] text-muted">{greeting}，</p>
           <h1 className="mt-2 font-display text-4xl italic leading-tight">
             {state.profile?.name ?? "旅人"}
@@ -71,27 +66,6 @@ export default function Dashboard() {
           </div>
         </Card>
 
-        {/* 今日任务环 */}
-        <Card className="flex flex-col items-center justify-center text-center">
-          <p className="mb-4 text-xs uppercase tracking-[0.25em] text-muted">今日任务</p>
-          <ScoreRing
-            value={todayTasks.length > 0 ? (doneToday / todayTasks.length) * 100 : 0}
-            label={`${doneToday}/${todayTasks.length || 0}`}
-          />
-          <p className="mt-4 text-xs text-muted">
-            {todayTasks.length === 0
-              ? "还没有行动计划"
-              : doneToday === todayTasks.length
-                ? "今日目标全部完成 ✓"
-                : "完成日常任务获取 XP"}
-          </p>
-          <Link
-            to="/life-os/life"
-            className="mt-4 text-xs text-[#89AACC] transition-colors hover:text-text-primary"
-          >
-            进入生活管理 →
-          </Link>
-        </Card>
       </div>
 
       {/* 快速入口 */}
@@ -157,18 +131,9 @@ export default function Dashboard() {
             <span>XP {xp}</span>
             <span>{level >= 5 ? "已满级" : `下一级 ${nextBase} XP`}</span>
           </div>
-          {state.rpg ? (
+          {state.rpg && state.rpg.achievements.length > 0 && (
             <p className="mt-4 text-xs leading-relaxed text-muted">
-              当前方向：{state.rpg.direction}
-              <br />
-              已解锁成就 {state.rpg.achievements.length} 项
-            </p>
-          ) : (
-            <p className="mt-4 text-xs text-muted">
-              还没有选择人生方向，
-              <Link to="/life-os/rpg" className="text-[#89AACC] hover:text-text-primary">
-                去 RPG 系统选择 →
-              </Link>
+              已解锁成就 {state.rpg.achievements.length} 项：{state.rpg.achievements.slice(-3).join(" · ")}
             </p>
           )}
         </Card>

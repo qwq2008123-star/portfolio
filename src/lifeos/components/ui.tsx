@@ -255,19 +255,23 @@ export function Thinking({ text = "AI 正在思考" }: { text?: string }) {
 
 /** 打字机输出（模拟 AI 流式回复）。
  * 进度按「真实流逝时间」计算：定时器即使被浏览器限流（后台标签页 / 长开页面），
- * 下一次触发也会直接跳到正确位置，永不卡字。点击可立即显示全文。 */
+ * 下一次触发也会直接跳到正确位置。热更新 / 父组件重渲染导致 effect 重跑时，
+ * 从已显示的长度续播而不是从头再来，文本永远不会冻在半截。点击可立即显示全文。 */
 export function TypeOut({ text, speed = 18, onDone }: { text: string; speed?: number; onDone?: () => void }) {
   const [shown, setShown] = useState("");
-  const startRef = useRef(0);
+  const shownLenRef = useRef(0);
   const doneRef = useRef(false);
+
   useEffect(() => {
-    setShown("");
+    // 文本被替换（而非续写）时重置进度；否则从当前长度续播
+    if (!text.startsWith(text.slice(0, shownLenRef.current))) shownLenRef.current = 0;
     doneRef.current = false;
-    startRef.current = performance.now();
+    const start = performance.now() - shownLenRef.current * speed;
     let timer = 0;
     const tick = () => {
       if (doneRef.current) return; // 已被点击跳过
-      const chars = Math.min(Math.floor((performance.now() - startRef.current) / speed), text.length);
+      const chars = Math.min(Math.floor((performance.now() - start) / speed), text.length);
+      shownLenRef.current = chars;
       setShown(text.slice(0, chars));
       if (chars >= text.length) {
         doneRef.current = true;
@@ -278,11 +282,13 @@ export function TypeOut({ text, speed = 18, onDone }: { text: string; speed?: nu
     };
     timer = window.setTimeout(tick, 50);
     return () => clearTimeout(timer);
-  }, [text, speed, onDone]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [text, speed]);
 
   const skip = () => {
     if (doneRef.current) return;
     doneRef.current = true;
+    shownLenRef.current = text.length;
     setShown(text);
     onDone?.();
   };

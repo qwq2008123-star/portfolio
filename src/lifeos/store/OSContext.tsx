@@ -36,6 +36,8 @@ function initialState(): OSState {
     moods: [],
     rpg: null,
     memories: [],
+    integrations: [],
+    innerCircle: { memories: [], sessions: [] },
     stats: {
       tasksCompleted: 0,
       decisionsCount: 0,
@@ -50,8 +52,8 @@ function initialState(): OSState {
 }
 
 export function xpForLevel(level: number): number {
-  // 升到 level+1 所需总 XP
-  return [0, 100, 260, 500, 900][Math.min(level, 5)] ?? 9999;
+  // 达到该等级所需的总 XP（L1=0，L2=100，…，L5=900）
+  return [0, 100, 260, 500, 900][Math.max(0, Math.min(level - 1, 4))] ?? 9999;
 }
 
 export const LEVEL_TITLES = ["", "初入江湖", "渐入佳境", "驾轻就熟", "炉火纯青", "登堂入室"];
@@ -69,8 +71,15 @@ type Action =
   | { type: "addMessage"; msg: ChatMessage }
   | { type: "addMood"; mood: string }
   | { type: "initRPG"; direction: string }
+  | { type: "resetRPG" }
   | { type: "addXp"; amount: number; reason?: string }
   | { type: "connect"; id: string }
+  | { type: "addIntegration"; note: import("../types").IntegrationNote }
+  | {
+      type: "icUpdate";
+      memories?: import("../types").ICMemory[];
+      sessions?: import("../types").ICSession[];
+    }
   | { type: "reset" };
 
 function mem(
@@ -229,14 +238,45 @@ function reducer(state: OSState, action: Action): OSState {
     case "addXp": {
       if (!state.rpg) return state;
       const rpg = advanceXp({ ...state.rpg, xp: state.rpg.xp + action.amount });
+      const newAchievements = checkAchievements(state.stats, rpg.level).filter(
+        (a) => !rpg.achievements.includes(a),
+      );
       return {
         ...state,
-        rpg,
-        memories: action.reason
-          ? [mem("rpg", `${action.reason} (+${action.amount} XP)`), ...state.memories]
-          : state.memories,
+        rpg: { ...rpg, achievements: [...rpg.achievements, ...newAchievements] },
+        memories: [
+          ...(action.reason ? [mem("rpg", `${action.reason} (+${action.amount} XP)`)] : []),
+          ...newAchievements.map((a) => mem("rpg", `解锁成就「${a}」`, 2)),
+          ...state.memories,
+        ],
       };
     }
+
+    case "resetRPG":
+      return {
+        ...state,
+        rpg: null,
+        memories: [mem("rpg", "重置了人生方向，回到选择页", 1), ...state.memories],
+      };
+
+    case "addIntegration":
+      return {
+        ...state,
+        integrations: [action.note, ...state.integrations].slice(0, 20),
+        memories: [
+          mem("rpg", `完成了一次「整合之旅」对话`, 2),
+          ...state.memories,
+        ],
+      };
+
+    case "icUpdate":
+      return {
+        ...state,
+        innerCircle: {
+          memories: action.memories ?? state.innerCircle.memories,
+          sessions: action.sessions ?? state.innerCircle.sessions,
+        },
+      };
 
     case "connect":
       return state; // 连接状态在页面本地维护（Demo 演示）

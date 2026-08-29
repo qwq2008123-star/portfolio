@@ -8,9 +8,7 @@ const NAV = [
   { to: "/life-os/profile", label: "人格档案", icon: "◉" },
   { to: "/life-os/simulator", label: "未来模拟器", icon: "∿" },
   { to: "/life-os/decisions", label: "决策助手", icon: "⚖" },
-  { to: "/life-os/life", label: "生活管理", icon: "▤" },
   { to: "/life-os/companion", label: "情绪陪伴", icon: "☾" },
-  { to: "/life-os/rpg", label: "成长 RPG", icon: "✦" },
   { to: "/life-os/network", label: "人格网络", icon: "⬡" },
 ];
 
@@ -19,9 +17,7 @@ const TITLES: Record<string, string> = {
   "/life-os/profile": "AI 人格档案",
   "/life-os/simulator": "AI 未来模拟器",
   "/life-os/decisions": "AI 人生决策助手",
-  "/life-os/life": "AI 生活管理",
   "/life-os/companion": "AI 情绪陪伴",
-  "/life-os/rpg": "人生 RPG 成长系统",
   "/life-os/network": "AI 人格生态网络",
 };
 
