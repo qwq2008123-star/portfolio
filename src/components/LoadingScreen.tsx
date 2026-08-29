@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
-const WORDS = ["Design", "Create", "Inspire"];
+const WORDS = ["认识自己", "看见未来", "成为自己"];
 const DURATION_MS = 2700;
 const WORD_INTERVAL_MS = 900;
 
