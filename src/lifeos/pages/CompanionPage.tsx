@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useOS } from "../store/OSContext";
 import {
@@ -7,8 +7,11 @@ import {
   recommendRole,
   buildDecisionSpace,
   orchestrator,
+  type GuestAgent,
 } from "../engine/innerCircle";
-import { type DecisionSpace, type ICMemory, type ICMessage, type ICSession, type RoleKey } from "../types";
+import { buildRoster, FIXED_MEMBERS } from "../engine/network";
+import { MemberAvatar } from "../components/MemberAvatar";
+import type { DecisionSpace, ICMemory, ICMessage, ICSession, MatchCandidate, RoleKey } from "../types";
 
 // 自然语言指定角色：「我想和妈妈聊聊」「不想听建议，只想让朋友陪着」「让导师帮我分析」…
 const ROLE_INTENT: Array<[RegExp, RoleKey]> = [
@@ -37,15 +40,16 @@ export default function CompanionPage() {
   const [icInput, setIcInput] = useState("");
   const [icPending, setIcPending] = useState(false);
   const [specified, setSpecified] = useState<RoleKey[]>([]);
-  const [muted, setMuted] = useState<RoleKey[]>([]);
+  const [muted, setMuted] = useState<string[]>([]);
   // 队列化发送：回复生成期间再发的内容排队处理，永不丢失
   const queueRef = useRef<string[]>([]);
   const processingRef = useRef(false);
   const sessionRef = useRef<ICSession | null>(null);
   const specifiedRef = useRef<RoleKey[]>([]);
-  const mutedRef = useRef<RoleKey[]>([]);
+  const mutedRef = useRef<string[]>([]);
   const modeRef = useRef<"auto" | "all">("auto");
   const icMemoriesRef = useRef<ICMemory[]>([]);
+  const guestsRef = useRef<GuestAgent[]>([]);
   const msgSeq = useRef(0);
   const [decision, setDecision] = useState<DecisionSpace | null>(null);
   const [decPending, setDecPending] = useState(false);
@@ -75,6 +79,31 @@ export default function CompanionPage() {
 
   const icMemories = state.innerCircle.memories;
   const recommendation = recommendRole(icMemories, state.moods);
+
+  // 被邀请进圆桌的来宾成员（人格网络里点「邀请加入圆桌」的）
+  const guestAgents = useMemo<GuestAgent[]>(() => {
+    if (!state.roundtableGuests?.length || !state.profile || !persona) return [];
+    const byId = new Map<string, MatchCandidate>();
+    [...buildRoster(state.profile, persona), ...FIXED_MEMBERS].forEach((c) => byId.set(c.id, c));
+    return state.roundtableGuests
+      .map((id) => byId.get(id))
+      .filter((c): c is MatchCandidate => Boolean(c))
+      .map((c) => ({
+        id: c.id,
+        name: c.name,
+        mbti: c.mbti,
+        role: c.type,
+        gives: (c.customServices ?? []).map((sv) => sv.name).slice(0, 3).length
+          ? (c.customServices ?? []).map((sv) => sv.name).slice(0, 3)
+          : [c.type],
+        intro: `${c.archetype} · ${c.role}`,
+        avatarVariant: c.avatarVariant,
+      }));
+  }, [state.profile, persona, state.roundtableGuests]);
+
+  useEffect(() => {
+    guestsRef.current = guestAgents;
+  }, [guestAgents]);
 
   // ── 圆桌发言（队列化：回复生成期间再发的内容排队处理，永不丢失） ──
   const profile = state.profile;
@@ -118,6 +147,7 @@ export default function CompanionPage() {
           memories: icMemoriesRef.current,
           specified: effectiveSpecified,
           muted: mutedRef.current,
+          guests: guestsRef.current,
           mode: modeRef.current,
         });
 
@@ -185,7 +215,7 @@ export default function CompanionPage() {
   ];
   const lastPrimary = [...(session?.messages ?? [])].reverse().find((m) => m.roleKey !== "user");
   const speakingRole =
-    lastPrimary && lastPrimary.roleKey !== "user" ? (lastPrimary.roleKey as RoleKey) : null;
+    lastPrimary && lastPrimary.roleKey !== "user" ? lastPrimary.roleKey : null;
   // 每个角色与用户的关系记忆（邀请成员卡片展示）
   const roleRelationship = (key: RoleKey): string | null => {
     const weight = { confirmed: 3, explicit: 2, observed: 1 } as const;
@@ -193,7 +223,6 @@ export default function CompanionPage() {
     if (!known.length) return null;
     return known.sort((a, b) => weight[b.kind] - weight[a.kind] || b.at - a.at)[0].content;
   };
-  const speakerSeat = speakingRole ? SEATS.find((s2) => s2.key === speakingRole) : undefined;
   const roleStatus = (key: RoleKey) => {
     if (muted.includes(key)) return "silent";
     if (icPending && session && session.messages[session.messages.length - 1]?.roleKey === "user") return "thinking";
@@ -225,24 +254,36 @@ export default function CompanionPage() {
                 "radial-gradient(ellipse at 50% 40%, rgba(232,200,106,0.10), rgba(90,70,40,0.08) 60%, transparent 75%)",
               boxShadow: "inset 0 0 60px rgba(232,200,106,0.08), 0 0 50px rgba(232,200,106,0.05)",
             }}
-            animate={{ x: speakerSeat ? (speakerSeat.x - 50) * 3 : 0 }}
+            animate={{ x: (() => {
+              if (!speakingRole || speakingRole === "user") return 0;
+              const seatIdx = SEATS.findIndex((s2) => s2.key === speakingRole);
+              if (seatIdx >= 0) return (SEATS[seatIdx].x - 50) * 3;
+              const guestIdx = guestAgents.findIndex((g) => g.id === speakingRole);
+              return guestIdx >= 0 ? (guestAgents[guestIdx].id === speakingRole && guestIdx === 0 ? -30 : 30) : 0;
+            })() }}
             transition={{ duration: 1.2, ease: "easeInOut" }}
           />
           </div>
           {/* 灯光聚焦（发言者以外压暗） */}
           <AnimatePresence>
-            {speakingRole && speakerSeat && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.8 }}
-                className="pointer-events-none absolute inset-0 z-[5]"
-                style={{
-                  background: `radial-gradient(ellipse 38% 42% at ${speakerSeat.x}% ${speakerSeat.y}%, transparent 40%, rgba(0,0,0,0.5) 100%)`,
-                }}
-              />
-            )}
+            {(speakingRole === "user" || speakingRole) && (() => {
+              const seatIdx = SEATS.findIndex((s2) => s2.key === speakingRole);
+              const guestIdx = guestAgents.findIndex((g) => g.id === speakingRole);
+              const sx = seatIdx >= 0 ? SEATS[seatIdx].x : guestIdx >= 0 ? (guestIdx === 0 ? 28 : 72) : 50;
+              const sy = seatIdx >= 0 ? SEATS[seatIdx].y : guestIdx >= 0 ? 76 : 42;
+              return (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.8 }}
+                  className="pointer-events-none absolute inset-0 z-[5]"
+                  style={{
+                    background: `radial-gradient(ellipse 38% 42% at ${sx}% ${sy}%, transparent 40%, rgba(0,0,0,0.5) 100%)`,
+                  }}
+                />
+              );
+            })()}
           </AnimatePresence>
 
           {/* 角色座位 */}
@@ -301,6 +342,46 @@ export default function CompanionPage() {
               </motion.button>
             );
           })}
+          {/* 来宾座位（从人格网络邀请的成员） */}
+          {guestAgents.slice(0, 2).map((g, gi) => {
+            const pos = gi === 0 ? { x: 26, y: 76 } : { x: 74, y: 76 };
+            const dim = muted.includes(g.id);
+            const isSpeaking = speakingRole === g.id;
+            return (
+              <motion.div
+                key={g.id}
+                className="absolute z-10 -translate-x-1/2 -translate-y-1/2"
+                style={{ left: `${pos.x}%`, top: `${pos.y}%`, opacity: dim ? 0.3 : 1 }}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: dim ? 0.3 : 1, scale: 1 }}
+                transition={{ duration: 0.5 }}
+              >
+                <div className="flex flex-col items-center">
+                  <div
+                    className="overflow-hidden rounded-full border-2"
+                    style={{
+                      borderColor: isSpeaking ? "#E8C86A" : "rgba(137,170,204,0.4)",
+                      boxShadow: isSpeaking ? "0 0 20px rgba(232,200,106,0.5)" : "none",
+                    }}
+                  >
+                    {g.avatarVariant ? (
+                      <MemberAvatar variant={g.avatarVariant} size={44} />
+                    ) : (
+                      <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#0B1020] text-sm text-text-primary">
+                        {g.name.slice(0, 1)}
+                      </div>
+                    )}
+                  </div>
+                  <p className="mt-1 whitespace-nowrap text-[10px] text-text-primary/90">{g.name}</p>
+                  <p className="text-[9px] text-muted">{g.mbti} · {g.role}</p>
+                  {isSpeaking && (
+                    <span className="text-[8px] uppercase tracking-widest text-[#E8C86A]">speaking</span>
+                  )}
+                </div>
+              </motion.div>
+            );
+          })}
+
           {/* 用户座位 */}
           <div className="absolute bottom-[4%] left-1/2 z-10 -translate-x-1/2">
             <div className="flex flex-col items-center">
@@ -351,16 +432,18 @@ export default function CompanionPage() {
                   );
                 }
                 const def = IC_ROLES[m.roleKey as RoleKey];
+                const label = def ? `${def.icon} ${def.label}` : `⬡ ${m.name ?? "来宾"}`;
+                const hue = def?.hue ?? m.hue ?? "#89AACC";
                 const isLast = i === session.messages.length - 1;
                 return (
                   <motion.div key={m.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex justify-start">
                     <div className="max-w-[85%]">
-                      <p className="mb-1 text-[10px]" style={{ color: def.hue }}>
-                        {def.icon} {def.label}
+                      <p className="mb-1 text-[10px]" style={{ color: hue }}>
+                        {label}
                       </p>
                       <div
                         className="rounded-3xl rounded-bl-md border px-5 py-3.5 text-sm leading-relaxed"
-                        style={{ borderColor: `${def.hue}44`, background: "rgba(11,16,32,0.7)" }}
+                        style={{ borderColor: `${hue}44`, background: "rgba(11,16,32,0.7)" }}
                       >
                         {isLast ? <TypeOut text={m.text} /> : <span className="whitespace-pre-wrap">{m.text}</span>}
                       </div>
@@ -537,6 +620,38 @@ export default function CompanionPage() {
             })}
           </div>
         </Card>
+
+        {/* 来宾管理 */}
+        {guestAgents.length > 0 && (
+          <Card>
+            <p className="mb-1 text-sm text-text-primary">来宾 · 已在圆桌</p>
+            <p className="mb-3 text-[11px] text-muted">从人格网络邀请的成员，正在旁听圆桌讨论</p>
+            <div className="space-y-2">
+              {guestAgents.map((g) => (
+                <div key={g.id} className={`rounded-xl border p-2.5 ${muted.includes(g.id) ? "border-stroke opacity-45" : "border-[#89AACC]/30 bg-bg/60"}`}>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-text-primary">{g.name} <span className="text-[9px] text-muted">{g.mbti}</span></p>
+                    <div className="flex gap-1.5">
+                      <button
+                        onClick={() => setMuted((m) => (m.includes(g.id) ? m.filter((k) => k !== g.id) : [...m, g.id]))}
+                        className="text-[9px] text-muted hover:text-text-primary"
+                      >
+                        {muted.includes(g.id) ? "取消静音" : "静音"}
+                      </button>
+                      <button
+                        onClick={() => dispatch({ type: "toggleRoundtableGuest", id: g.id })}
+                        className="text-[9px] text-rose-400/80 hover:text-rose-400"
+                      >
+                        移出
+                      </button>
+                    </div>
+                  </div>
+                  <p className="mt-0.5 text-[9px] text-muted/70">{g.role} · 可交换：{g.gives.join("、")}</p>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
 
         <Card>
           <p className="mb-1 text-sm text-text-primary">记得你的事</p>

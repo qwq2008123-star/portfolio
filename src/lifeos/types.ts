@@ -158,6 +158,7 @@ export interface OSState {
   rpg: RPGState | null;
   memories: MemoryEvent[];
   integrations: IntegrationNote[];
+  roundtableGuests: string[];
   innerCircle: {
     memories: ICMemory[];
     sessions: ICSession[];
@@ -198,7 +199,9 @@ export interface ICMemory {
 
 export interface ICMessage {
   id: string;
-  roleKey: RoleKey | "user";
+  roleKey: string; // RoleKey / "user" / 来宾成员 id
+  name?: string; // 来宾发言时的显示名
+  hue?: string; // 来宾发言时的颜色
   text: string;
   at: number;
   emotions?: EmotionScore[];

@@ -146,7 +146,7 @@ function localAnalyze(text: string, specified: RoleKey[]): ICAnalysis {
 async function remoteAnalyze(
   text: string,
   specified: RoleKey[],
-  muted: RoleKey[],
+  muted: string[],
   profile: UserProfile,
 ): Promise<ICAnalysis> {
   const llm = getLLM();
@@ -299,11 +299,52 @@ function localRoleReply(role: RoleKey, text: string, memories: ICMemory[]): stri
   return `${arr[text.length % arr.length]}${extra}`;
 }
 
+// ─── 来宾 Agent：从人格网络邀请进圆桌的社区成员 ───
+export interface GuestAgent {
+  id: string;
+  name: string;
+  mbti: string;
+  role: string;
+  gives: string[];
+  intro: string;
+  avatarVariant?: string; // 社区固定成员的手绘形象
+}
+
+const GUEST_HUES = ["#89AACC", "#A78BFA", "#7BC496", "#E8C86A"];
+
+function guestHue(id: string): string {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
+  return GUEST_HUES[Math.abs(h) % GUEST_HUES.length];
+}
+
+export async function guestReply(
+  g: GuestAgent,
+  userText: string,
+  transcript: string,
+): Promise<string> {
+  const llm = getLLM();
+  if (llm.isRemote) {
+    try {
+      const raw = await llm.complete(
+        `你在「内心圆桌」作客。你的身份：${g.name}，${g.mbti} · ${g.role}。自我介绍：${g.intro}。你能提供的：${g.gives.join("、")}。以你的性格和视角对 TA 刚说的话简短回应（60 字内），自然带出你的专长，保持角色，不提「AI」。`,
+        `${transcript}\nTA：${userText}`,
+        30_000,
+        "deepseek-chat",
+      );
+      if (raw) return raw.trim();
+    } catch {
+      // 降级
+    }
+  }
+  return `从${g.role}的角度看，关键是先想清楚你要什么。这个我可以帮你具体梳理。`;
+}
+
 // ─── Orchestrator：一条用户消息 → 圆桌响应 ───
 export interface ICReply {
   primary: RoleKey;
   secondary: RoleKey | null;
-  messages: Array<{ roleKey: RoleKey; text: string }>;
+  messages: Array<{ roleKey: string; name?: string; hue?: string; text: string }>;
   emotions: EmotionScore[];
   need: string;
   newMemories: ICMemory[];
@@ -317,7 +358,8 @@ export async function orchestrator(
     persona: Persona;
     memories: ICMemory[];
     specified: RoleKey[];
-    muted: RoleKey[];
+    muted: string[];
+    guests?: GuestAgent[];
     mode?: "auto" | "all"; // all = 全员一起讨论
   },
 ): Promise<ICReply> {
@@ -378,7 +420,7 @@ export async function orchestrator(
       ? analysis.secondary
       : score(ranked[1]) - score(primary) < 0.12 ? null : ranked[1];
 
-  const messages: Array<{ roleKey: RoleKey; text: string }> = [];
+  const messages: Array<{ roleKey: string; name?: string; hue?: string; text: string }> = [];
   let primaryText = "";
   if (llm.isRemote) {
     try {
@@ -419,6 +461,21 @@ export async function orchestrator(
       ),
     );
     others.forEach((r, i) => messages.push({ roleKey: r, text: rest[i] }));
+  }
+
+  // 来宾 Agent（从人格网络邀请进圆桌的成员）：自动模式轮换一位；全员模式全部发言；指定 IC 角色时静默
+  const guests = (ctx.guests ?? []).filter((g) => !ctx.muted.includes(g.id));
+  if (guests.length && ctx.specified.length === 0) {
+    const userTurns = history.filter((m) => m.roleKey === "user").length;
+    const speakers = ctx.mode === "all" ? guests : [guests[userTurns % guests.length]];
+    const transcript = history
+      .slice(-8)
+      .map((m) => `${m.roleKey === "user" ? "TA" : "圆桌"}：${m.text}`)
+      .join("\n");
+    for (const g of speakers) {
+      const text = await guestReply(g, userText, transcript);
+      messages.push({ roleKey: g.id, name: g.name, text, hue: guestHue(g.id) });
+    }
   }
 
   if (secondary) {

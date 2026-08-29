@@ -290,6 +290,8 @@ function DossierDrawer({
   connected,
   onConnect,
   onClose,
+  inRoundtable,
+  onInviteRoundtable,
 }: {
   cand: MatchCandidate;
   hue: string;
@@ -297,6 +299,8 @@ function DossierDrawer({
   connected: boolean;
   onConnect: () => void;
   onClose: () => void;
+  inRoundtable: boolean;
+  onInviteRoundtable: () => void;
 }) {
   const [openService, setOpenService] = useState<string | null>(null);
   const [favorite, setFavorite] = useState(false);
@@ -599,6 +603,18 @@ function DossierDrawer({
             {favorite ? "★ 已收藏" : "☆ 收藏"}
           </button>
         </div>
+
+        {/* 邀请加入圆桌 */}
+        <button
+          onClick={onInviteRoundtable}
+          className={`mt-3 w-full rounded-2xl border px-4 py-2.5 text-xs transition-colors ${
+            inRoundtable
+              ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-400"
+              : "border-stroke text-muted hover:border-[#89AACC]/50 hover:text-text-primary"
+          }`}
+        >
+          {inRoundtable ? "✓ 已在内心圆桌 · 点击移出" : "✦ 邀请加入内心圆桌（一起讨论 / 交换技能）"}
+        </button>
       </div>
     </motion.aside>
   );
@@ -1142,6 +1158,8 @@ export default function NetworkPage() {
               connected={connected.includes(activeNode.cand.id)}
               onConnect={() => connect(activeNode.cand)}
               onClose={() => setActive(null)}
+              inRoundtable={state.roundtableGuests.includes(activeNode.cand.id)}
+              onInviteRoundtable={() => dispatch({ type: "toggleRoundtableGuest", id: activeNode.cand.id })}
             />
           )}
         </AnimatePresence>

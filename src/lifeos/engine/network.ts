@@ -244,3 +244,27 @@ export const FIXED_MEMBERS: MatchCandidate[] = [
     ],
   },
 ];
+
+// ─── 弱关系成员 + 完整名册（人格网络与内心圆桌共用，保证成员 id 跨页一致） ───
+export function weakTies(profile: UserProfile): MatchCandidate[] {
+  const rng = createRng(hashString(profile.name + "weakties"));
+  const WEAK_ROLES = ["独立音乐人", "山系户外玩家", "播客主播", "飞盘俱乐部主理人"];
+  return [0, 1].map((i) => {
+    const name = `${rng.pick(["洛", "祁"])}${rng.pick(["之野", "一帆", "知夏", "沐风"])}`;
+    return {
+      id: `weak-${i}-${hashString(name)}`,
+      name,
+      role: rng.pick(WEAK_ROLES),
+      archetype: "潜在发现",
+      mbti: rng.pick(["ESFP", "ISTP", "ENFJ", "INFP"]),
+      type: "兴趣朋友" as const,
+      matchScore: Math.round(rng.range(38, 52)),
+      reasons: ["弱关系：出现于你的扩展人脉圈，可能有潜在交集"],
+      connected: false,
+    };
+  });
+}
+
+export function buildRoster(profile: UserProfile, persona: Persona): MatchCandidate[] {
+  return [...generateMatches(profile, persona), ...weakTies(profile)];
+}

@@ -37,6 +37,7 @@ function initialState(): OSState {
     rpg: null,
     memories: [],
     integrations: [],
+    roundtableGuests: [],
     innerCircle: { memories: [], sessions: [] },
     stats: {
       tasksCompleted: 0,
@@ -75,6 +76,7 @@ type Action =
   | { type: "addXp"; amount: number; reason?: string }
   | { type: "connect"; id: string }
   | { type: "addIntegration"; note: import("../types").IntegrationNote }
+  | { type: "toggleRoundtableGuest"; id: string }
   | {
       type: "icUpdate";
       memories?: import("../types").ICMemory[];
@@ -258,6 +260,20 @@ function reducer(state: OSState, action: Action): OSState {
         rpg: null,
         memories: [mem("rpg", "重置了人生方向，回到选择页", 1), ...state.memories],
       };
+
+    case "toggleRoundtableGuest": {
+      const has = state.roundtableGuests.includes(action.id);
+      return {
+        ...state,
+        roundtableGuests: has
+          ? state.roundtableGuests.filter((id) => id !== action.id)
+          : [...state.roundtableGuests, action.id].slice(0, 4),
+        memories: [
+          mem("rpg", has ? "一位成员离开了圆桌" : "邀请了一位成员加入内心圆桌", 1),
+          ...state.memories,
+        ],
+      };
+    }
 
     case "addIntegration":
       return {
