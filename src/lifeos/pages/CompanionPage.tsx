@@ -247,7 +247,7 @@ export default function CompanionPage() {
 
   // 座位位置（画布百分比）
   const SEATS: Array<{ key: RoleKey; x: number; y: number }> = [
-    { key: "mother", x: 50, y: 22 },
+    { key: "mother", x: 50, y: 26 },
     { key: "mentor", x: 88, y: 34 },
     { key: "friend", x: 12, y: 34 },
     { key: "child", x: 80, y: 68 },
@@ -271,11 +271,11 @@ export default function CompanionPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6 xl:h-[max(calc(100vh-11rem),540px)] xl:flex-row xl:overflow-hidden">
+    <div className="flex flex-col gap-6 xl:h-[max(calc(100vh-11rem),620px)] xl:flex-row xl:overflow-hidden">
       {/* ── 主区：圆桌 + 对话（不被右栏高度拉伸） ── */}
-      <Card className={`flex min-h-0 flex-1 flex-col self-start p-0 ${session ? "xl:h-[calc(100vh-11rem)] xl:min-h-[540px]" : ""}`}>
+      <Card className={`flex min-h-0 flex-1 flex-col self-start p-0 ${session ? "xl:h-[calc(100vh-11rem)] xl:min-h-[620px]" : ""}`}>
         {session && (
-        <div className="relative h-[clamp(240px,40vh,300px)] shrink-0 overflow-hidden rounded-t-3xl border-b border-stroke">
+        <div className="relative h-[clamp(200px,36vh,300px)] shrink-0 overflow-hidden rounded-t-3xl border-b border-stroke">
           <div
             className="absolute inset-0"
             style={{
@@ -300,7 +300,7 @@ export default function CompanionPage() {
               const seatIdx = SEATS.findIndex((s2) => s2.key === speakingRole);
               const guestIdx = guestAgents.findIndex((g) => g.id === speakingRole);
               const sx = seatIdx >= 0 ? SEATS[seatIdx].x : guestIdx >= 0 ? (guestIdx === 0 ? 30 : 70) : 50;
-              const sy = seatIdx >= 0 ? SEATS[seatIdx].y : guestIdx >= 0 ? 60 : 42;
+              const sy = seatIdx >= 0 ? SEATS[seatIdx].y : guestIdx >= 0 ? 52 : 42;
               return (
                 <motion.div
                   initial={{ opacity: 0 }}
@@ -383,7 +383,7 @@ export default function CompanionPage() {
           })}
           {/* 来宾座位（从星系邀请的成员） */}
           {guestAgents.slice(0, 2).map((g, gi) => {
-            const pos = gi === 0 ? { x: 30, y: 60 } : { x: 70, y: 60 };
+            const pos = gi === 0 ? { x: 30, y: 52 } : { x: 70, y: 52 };
             const dim = muted.includes(g.id);
             const isSpeaking = speakingRole === g.id;
             return (
