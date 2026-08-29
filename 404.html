@@ -9,10 +9,9 @@
       // 这里把真实路径作为 ?p= 参数重定向回 /portfolio/，由 index.html 还原路径。
       var repo = "portfolio";
       var pathname = window.location.pathname;
-      var prefix = "/" + repo; // 注意：含前导斜杠，长度 = repo.length + 1
-      var idx = pathname.indexOf(prefix);
-      var rest = idx >= 0 ? pathname.slice(idx + prefix.length + 1) : ""; // 跳过 /portfolio/ 前缀
-      var base = pathname.slice(0, idx + prefix.length + 1); // 保留 /portfolio/
+      var idx = pathname.indexOf("/" + repo);
+      var rest = idx >= 0 ? pathname.slice(idx + repo.length + 1) : "";
+      var base = pathname.slice(0, idx + repo.length + 1);
       window.location.replace(
         window.location.origin + base + "?p=" + encodeURIComponent(rest) + window.location.hash,
       );
