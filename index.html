@@ -13,12 +13,14 @@
     <script>
       // SPA fallback for GitHub Pages: /portfolio/<path> 刷新时 404.html 会把路径
       // 作为 ?p= 参数重定向回首页，这里把它还原成真实路径再交给 React Router。
+      // 注意必须带上 base 前缀 /portfolio/，否则地址栏会变成根域路径，刷新即 404。
       (function () {
         var m = window.location.search.match(/[?&]p=([^&]+)/);
         if (m && m[1]) {
           var restored = decodeURIComponent(m[1]);
           if (restored.indexOf("/") !== 0) restored = "/" + restored;
-          history.replaceState(null, "", restored);
+          var base = "%BASE_URL%".replace(/\/$/, "");
+          history.replaceState(null, "", base + restored);
         }
       })();
     </script>
