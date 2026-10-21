@@ -30,3 +30,10 @@ If you are developing a production application, we recommend enabling type-aware
 ```
 
 See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+
+## 文档与演示
+
+- `docs/AI-Life-OS-商业计划书.md` — 商业计划书正文（16 个章节，与路演稿一一对应）
+- `docs/AI-Life-OS-商业计划书路演.pptx` — 16:9 可编辑路演稿
+- `public/deck/index.html` — **网页版路演稿**，部署后访问 `/portfolio/deck/`
+  单文件自包含（图片内嵌、离线可用）：粒子星空、逐元素入场、`←/→` 翻页、`F` 全屏、`N` 演讲备注、`⌘P` 导出 PDF

@@ -7,7 +7,10 @@ const HLS_SRC =
 
 const MARQUEE_TEXT = "BUILDING THE FUTURE • ".repeat(10);
 
-const SOCIALS = [{ label: "GitHub", href: "https://github.com/qwq2008123-star/portfolio" }];
+const SOCIALS = [
+  { label: "GitHub", href: "https://github.com/qwq2008123-star/portfolio" },
+  { label: "路演 Deck", href: `${import.meta.env.BASE_URL}deck/` },
+];
 
 function ArrowUpRight({ size = 18 }: { size?: number }) {
   return (
